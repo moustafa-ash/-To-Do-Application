@@ -9,7 +9,7 @@ This is our project for Database Lab 2 at Alexandria National University. Users 
 | Moustafa Mohamed | 2304252 | Project setup, accounts and authentication, password hashing, sessions, CSRF protection and shared integration. |
 | Ibrahim Hossam | 2304248 | Personal to-do lists, adding/editing/deleting tasks, done/open status, task forms and validation, and handling oversized task IDs. |
 
-Moustafa uses `moustafa-ash` on GitHub and Ibrahim uses `i949`. We both have commits in this repository. Codex helped with the shared styling, tests and documentation.
+Moustafa uses `moustafa-ash` on GitHub and Ibrahim uses `i949`. We both have commits in this repository.
 
 ## Technology
 
