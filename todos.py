@@ -19,8 +19,15 @@ def _current_user_id():
 def _todo_id(raw_id):
     if not raw_id.isascii() or not raw_id.isdecimal():
         abort(404)
-    value = int(raw_id)
-    if value < 1 or value > MAX_TODO_ID:
+    normalized_id = raw_id.lstrip("0") or "0"
+    max_id_text = str(MAX_TODO_ID)
+    if len(normalized_id) > len(max_id_text) or (
+        len(normalized_id) == len(max_id_text) and normalized_id > max_id_text
+    ):
+        abort(404)
+
+    value = int(normalized_id)
+    if value < 1:
         abort(404)
     return value
 
