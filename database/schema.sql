@@ -11,6 +11,7 @@ registration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 PRIMARY KEY (user_id),
 UNIQUE (email)
 );
+
 CREATE TABLE todos (
 todo_id INT NOT NULL AUTO_INCREMENT,
 user_id INT NOT NULL,

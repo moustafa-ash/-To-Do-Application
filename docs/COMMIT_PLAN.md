@@ -1,79 +1,81 @@
-# First implementation commit plan
+# Commit plan
 
-Prepared on 8 October 2026. No staging, commit, or push was performed by the documentation update.
+Updated on 8 October 2026 after publishing the first implementation checkpoint.
 
-## Current Git state
+## Published checkpoint
 
-The repository already has commit `e5b4dad` (`Initial commit`), containing `.gitignore`. The application files are currently untracked, so this will be the first implementation commit, not the repository's literal first commit. Branch `main` is configured to track `origin/main`; origin points to `https://github.com/moustafa-ash/-To-Do-Application.git`. Remote state has not been refreshed.
+- Initial repository commit: `e5b4dad` (`Initial commit`), containing `.gitignore`.
+- First implementation commit: [49c9471](https://github.com/moustafa-ash/-To-Do-Application/commit/49c9471903c9fc7d155dfd4461056e60564bd1e4).
+- Commit message: `Add Flask bootstrap, registration validation, and lab database schema`.
+- Pushed to `origin/main`; the GitHub branch was verified against the full local commit hash after the push.
+- Included 17 files: Flask/session bootstrap, registration form and server validation, database helper, both table definitions, dependency pins, safe environment example, placeholders, README, and the documents in `docs/`.
+- `.env` and `.venv` were excluded. The working tree was clean immediately after publication.
 
-`.env` and `.venv` are ignored. The credential fields in `.env.example` were checked as obvious placeholders without printing their values. Review them again before committing.
+GitHub initially rejected the push because the author email was private. The unpublished commit was amended to use the noreply address already present in the published initial commit, then pushed successfully. Repository-local `user.email` now uses that noreply address; global configuration and GitHub privacy settings were not changed.
 
-## Proposed checkpoint
+This checkpoint does not implement persisted registration, login/logout, a private list, or to-do application behavior. Authentication remains unfinished.
 
-Commit message:
+## Verification attached to the checkpoint
 
-```text
-Add Flask bootstrap, registration validation, and lab database schema
-```
+- Local Flask test-client checks passed for home/register routes, required messages, password mismatch, name/email limits, ASCII and multibyte password byte limits, and session storage.
+- Python syntax, the isolated bcrypt comparison experiment, and installed dependency pins passed during documentation preparation.
+- Documentation links were fixed for the move into `docs/` and checked before publication.
+- Python syntax and staged whitespace checks passed after removing trailing blank lines. Staged files were reviewed before committing.
+- Earlier live MySQL connection, users-table constraints, and browser results were reported by Moustafa; they were not repeated during publication.
 
-Include existing work: app/session setup, authentication blueprint and form validation, database helper, two-table DDL, dependency pins, safe environment example, current placeholder files, updated README, and handoff/commit plan.
+The complete DDL reset, clean-machine setup, live to-do foreign key, account creation, two-user isolation, and final browser journeys were not verified. Do not describe them as passed.
 
-Do not describe this as completed authentication. It has no persisted registration, login/logout, private list, or to-do application behavior yet. Do not include `.env`, `.venv`, bytecode, local database dumps, or screenshots containing credentials. Git does not track empty directories such as `screenshots/`.
+## Next small implementation commits
 
-## Checks before staging
+| Owner | Suggested commit message | Scope and checks |
+| --- | --- | --- |
+| Moustafa | `Add registration persistence and authenticated sessions` | Parameterized INSERT, bcrypt hash, duplicate-email message, transaction/connection handling, authenticated identity, and POST redirect. Check successful registration, duplicate email, stored hash, invalid input without a write, and database failure handling. Agree on an existing redirect endpoint before wiring it. |
+| Moustafa | `Add login and logout` | Parameterized lookup, bcrypt comparison, shared `Invalid email or password` message, session lifecycle, and private-route agreement. Check correct/wrong passwords, unknown email, injection input, logout, and unauthenticated access. |
+| Ibrahim | `Add private to-do listing and creation` | Register the agreed blueprint, show only the session user's rows newest first, add titles with validation, and show an empty state. Check two users, logged-out access, title boundaries, and foreign-key behavior. Integrated checks depend on real authentication. |
+| Ibrahim | `Add to-do editing, completion, and deletion` | Edit title, mark done/open, confirm deletion, and include the session user in every mutation predicate. Check malformed input and attempts to change another user's rows. |
+| Both, with one shared-file editor at a time | `Add browser validation and shared responsive layout` | Exact lab messages in the browser while retaining server checks; shared styling, feedback, name/logout controls, empty/done states. Check JavaScript on/off and about 360 px width. |
+| Both | `Document verified lab setup and submission evidence` | Reconcile R1-R10, verify setup on a fresh environment and reset only a disposable lab database, add four screenshots and the four explanations in your own words. Record actual contributors. |
 
-1. Save your files and agree which existing changes belong to this checkpoint with Ibrahim. The schema already includes `todos`; do not claim someone else's contribution as your own. Each member still needs their own commits.
-2. Open the README and handoff and confirm names, IDs, ownership, and the proposed route/session agreement.
-3. From the repository root, inspect:
+These are proposed checkpoints, not completed work or rigid schedules. Each teammate must make their own commits and understand both parts of the application. Keep bonus features out until required behavior is complete.
+
+## Routine for each future commit
+
+1. Coordinate shared-file ownership and save the intended changes. Pull before starting; pull again before pushing.
+2. Run checks for the behavior changed. Keep current README claims accurate.
+3. Inspect Git and credentials from the repository root:
 
 ```powershell
 git status --short
-git log -3 --oneline
+git diff
 git check-ignore .env .venv
 git ls-files -- .env
 ```
 
-`git check-ignore` should print both ignored paths; `git ls-files -- .env` should print nothing. Review `.env.example` locally for fake values only.
+The ignored-path check should print `.env` and `.venv`; the tracked-file check for `.env` should print nothing. Keep only fake values in `.env.example`. Do not include credentials, bytecode, local dumps, or unrelated work.
 
-Local syntax, Flask route/validation, session, bcrypt-experiment, and installed-version checks passed during documentation preparation. The database helper's earlier successful live connection was reported by Moustafa. The full DDL reset and a clean-machine install were not run; do not claim those passed.
-
-## Stage a specific list when ready
-
-These are instructions for your reviewed commit, not commands already executed:
+4. Stage only files belonging to that commit. For example, if a registration change touches only these two files:
 
 ```powershell
-git add -- .gitignore .env.example README.md docs/HANDOFF.md docs/COMMIT_PLAN.md requirements.txt app.py auth.py db.py todos.py database/schema.sql templates/base.html templates/register.html templates/login.html templates/todos.html static/css/style.css static/js/auth.js static/js/todos.js
+git add -- auth.py templates/register.html
 git diff --cached --stat
 git diff --cached --check
 git diff --cached
 ```
 
-Check the staged content, including DDL and documentation. Ensure it has no real passwords or secret keys. If `--check` reports whitespace problems, fix them and stage those files again before committing.
+Include other files only if that change actually needs them. Fix reported whitespace issues and restage. Review the content before committing.
 
-After you have reviewed the staged checkpoint:
-
-```powershell
-git commit -m "Add Flask bootstrap, registration validation, and lab database schema"
-git status --short
-```
-
-This makes a local checkpoint. It does not publish anything.
-
-## Publish separately when ready
-
-After the local commit and teammate coordination:
+5. Commit with the message matching the actual completed scope, then review `git status --short`. A local commit does not publish the work.
+6. When ready to publish:
 
 ```powershell
 git pull --ff-only
 git push origin main
 ```
 
-These commands use the network and are not part of the documentation update. If the pull fails because histories diverged, resolve the branch state together before pushing; do not force-push. A teammate cloning before this checkpoint is published will not receive the new files.
+If a pull reports divergent history or a conflict, resolve it together before pushing. Do not force-push over teammate work. Verify that the pushed commit is on GitHub.
 
-## Subsequent small commits
+## This plan update
 
-- Moustafa: registration persistence and authenticated session, then login/logout, then browser validation.
-- Ibrahim: private to-do list and creation, then editing/done/deletion and validation.
-- Coordinate shared layout, integration checks, screenshots, and final README evidence.
+This document records the completed publication and replaces the original first-commit instructions. Editing it does not create another commit or push.
 
-Keep each commit explainable and checked. Do not add bonus features before the required lab behavior is complete.
+If publishing just this documentation update later, its scope is `docs/COMMIT_PLAN.md` and a suitable message is `Update commit plan after publishing initial checkpoint`.
