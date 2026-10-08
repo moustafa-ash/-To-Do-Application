@@ -1,3 +1,5 @@
+from datetime import date
+
 import pymysql
 from flask import (
     Blueprint,
@@ -15,6 +17,19 @@ from db import get_connection
 todos = Blueprint("todos", __name__)
 
 MAX_TODO_ID = 2_147_483_647
+
+
+def _parse_due_date(raw_value):
+    """Return (date, valid); an empty field means no due date."""
+    if not raw_value:
+        return None, True
+    try:
+        parsed = date.fromisoformat(raw_value)
+    except ValueError:
+        return None, False
+    if parsed.isoformat() != raw_value:
+        return None, False
+    return parsed, True
 
 
 def _current_user_id():
@@ -46,7 +61,7 @@ def _get_user_todos(user_id):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                """SELECT todo_id, title, is_done, created_at
+                """SELECT todo_id, title, due_date, is_done, created_at
                     FROM todos WHERE user_id = %s ORDER BY todo_id DESC""",
                 (user_id,),
             )
@@ -56,7 +71,15 @@ def _get_user_todos(user_id):
 
 
 def _render_list(
-    user_id, *, title="", edit_id=None, edit_title=None, delete_id=None, status=200
+    user_id,
+    *,
+    title="",
+    due_date="",
+    edit_id=None,
+    edit_title=None,
+    edit_due_date=None,
+    delete_id=None,
+    status=200,
 ):
     try:
         user_todos = _get_user_todos(user_id)
@@ -72,6 +95,10 @@ def _render_list(
                 abort(404)
             if edit_title is None:
                 edit_title = edited["title"]
+            if edit_due_date is None:
+                edit_due_date = (
+                    edited["due_date"].isoformat() if edited["due_date"] else ""
+                )
     except pymysql.MySQLError:
         user_todos = []
         flash("Your to-do list could not be loaded. Please try again.", "error")
@@ -80,8 +107,10 @@ def _render_list(
         "todos.html",
         todos=user_todos,
         title=title,
+        due_date=due_date,
         edit_id=edit_id,
         edit_title=edit_title,
+        edit_due_date=edit_due_date,
         delete_id=delete_id,
         name=session.get("name", ""),
     ), status
@@ -113,20 +142,30 @@ def add():
         return response
 
     title = request.form.get("title", "").strip()
+    due_date_text = request.form.get("due_date", "")
+    due_date_value, valid_due_date = _parse_due_date(due_date_text)
     if not title:
         flash("Title is required", "error")
-        return _render_list(user_id, title=request.form.get("title", ""), status=400)
+        return _render_list(
+            user_id,
+            title=request.form.get("title", ""),
+            due_date=due_date_text,
+            status=400,
+        )
     if len(title) > 200:
         flash("Title is too long", "error")
-        return _render_list(user_id, title=title, status=400)
+        return _render_list(user_id, title=title, due_date=due_date_text, status=400)
+    if not valid_due_date:
+        flash("Enter a valid due date", "error")
+        return _render_list(user_id, title=title, due_date=due_date_text, status=400)
 
     connection = None
     try:
         connection = get_connection()
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO todos (user_id, title) VALUES (%s, %s)",
-                (user_id, title),
+                "INSERT INTO todos (user_id, title, due_date) VALUES (%s, %s, %s)",
+                (user_id, title, due_date_value),
             )
         connection.commit()
     except pymysql.MySQLError as error:
@@ -134,7 +173,9 @@ def add():
             connection.rollback()
         if error.args[0] == 1062:
             flash("A to-do with this title already exists", "error")
-            return _render_list(user_id, title=title, status=400)
+            return _render_list(
+                user_id, title=title, due_date=due_date_text, status=400
+            )
         flash("Your to-do could not be added. Please try again.", "error")
         return redirect(url_for("todos.index"))
     finally:
@@ -152,25 +193,44 @@ def edit(todo_id):
         return response
     todo_id = _todo_id(todo_id)
     title = request.form.get("title", "").strip()
+    due_date_text = request.form.get("due_date", "")
+    due_date_value, valid_due_date = _parse_due_date(due_date_text)
     if not title:
         flash("Title is required", "error")
         return _render_list(
             user_id,
             edit_id=todo_id,
             edit_title=request.form.get("title", ""),
+            edit_due_date=due_date_text,
             status=400,
         )
     if len(title) > 200:
         flash("Title is too long", "error")
-        return _render_list(user_id, edit_id=todo_id, edit_title=title, status=400)
+        return _render_list(
+            user_id,
+            edit_id=todo_id,
+            edit_title=title,
+            edit_due_date=due_date_text,
+            status=400,
+        )
+    if not valid_due_date:
+        flash("Enter a valid due date", "error")
+        return _render_list(
+            user_id,
+            edit_id=todo_id,
+            edit_title=title,
+            edit_due_date=due_date_text,
+            status=400,
+        )
 
     connection = None
     try:
         connection = get_connection()
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE todos SET title = %s WHERE todo_id = %s AND user_id = %s",
-                (title, todo_id, user_id),
+                "UPDATE todos SET title = %s, due_date = %s "
+                "WHERE todo_id = %s AND user_id = %s",
+                (title, due_date_value, todo_id, user_id),
             )
             changed = cursor.rowcount
         connection.commit()
@@ -179,7 +239,13 @@ def edit(todo_id):
             connection.rollback()
         if error.args[0] == 1062:
             flash("A to-do with this title already exists", "error")
-            return _render_list(user_id, edit_id=todo_id, edit_title=title, status=400)
+            return _render_list(
+                user_id,
+                edit_id=todo_id,
+                edit_title=title,
+                edit_due_date=due_date_text,
+                status=400,
+            )
         flash("Your to-do could not be updated. Please try again.", "error")
         return redirect(url_for("todos.index"))
     finally:
