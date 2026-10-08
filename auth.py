@@ -85,7 +85,7 @@ def register():
                 session["user_id"] = user_id
                 session["name"] = name
                 current_app.session_interface.regenerate(session)
-                return redirect(url_for("home"))
+                return redirect(url_for("todos.index"))
 
     return render_template("register.html", errors=errors)
 
@@ -138,7 +138,7 @@ def login():
                     session["user_id"] = user["user_id"]
                     session["name"] = user["name"]
                     current_app.session_interface.regenerate(session)
-                    return redirect(url_for("home"))
+                    return redirect(url_for("todos.index"))
 
     return render_template("login.html", errors=errors)
 

@@ -1,95 +1,85 @@
 # Teammate handoff: accounts and personal to-dos
 
-Checkpoint: 8 October 2026. This is a development handoff, not a finished application or a message sent to the teammate.
+Updated on 8 October 2026 from base commit `5c05140` plus local integration changes, in `D:\To-Do-Application\-To-Do-Application`. This is a development handoff; no message has been sent to the teammate.
 
-## Ownership
+## Ownership and shared files
 
-- Moustafa Mohamed (2304252): accounts/authentication in `auth.py`, register/login templates, authentication JavaScript, and initial shared setup.
-- Ibrahim Hossam (2304248): personal to-do routes in `todos.py`, `templates/todos.html`, and `static/js/todos.js`.
-- Coordinate before editing `app.py`, `db.py`, `database/schema.sql`, `templates/base.html`, `static/css/style.css`, `requirements.txt`, or `README.md`. One editor at a time.
-- Both members review both tables and all code and make their own commits. Confirm actual contributions in the final README rather than assuming who wrote existing SQL.
+- Moustafa Mohamed (2304252): accounts/authentication, authentication templates/JS, and initial shared setup.
+- Ibrahim Hossam (2304248): personal to-do routes, template and JavaScript.
+- Coordinate `app.py`, `db.py`, the schema, shared layout/CSS, dependencies and README before editing. One editor at a time. Both members must commit and explain the whole project.
 
-## What is ready
+Follow [README setup instructions](../README.md). Use separate local MySQL credentials and `.env`; the complete schema script deletes all `registration` data.
 
-- Registration validates input, bcrypt-hashes passwords, inserts with parameters, handles duplicate email, populates the session, rotates its ID, and redirects to protected home.
-- Login uses a parameterized lookup and bcrypt comparison. Wrong passwords and unknown emails both show `Invalid email or password`. POST logout clears the session.
-- `session["user_id"]` and `session["name"]` now represent the authenticated account.
-- `auth.login_required` is implemented and applied to `/`; unauthenticated requests redirect to `auth.login`.
-- `app.py` checks CSRF form tokens before every POST/PUT/PATCH/DELETE. All three current forms include the hidden token; failed checks get a custom HTTP 400 page.
-- Registration/login templates have `data-auth` markers, an always-present `#form-errors` list, and deferred loading of `static/js/auth.js`. The script is empty; browser validation is next.
-- `db.get_connection()` returns dictionary rows. Callers must commit successful writes and close connections; the authentication routes already do this.
-- `database/schema.sql` defines both required tables; it deletes all `registration` data when run. Memory sessions disappear on server restart.
+## What is implemented
 
-Follow [README setup instructions](../README.md). Each teammate needs their own MySQL and `.env`.
+- Registration/login/logout use bcrypt, parameterized SQL, server-side identity and session rotation. Successful registration/login redirects to `/todos`; protected home redirects there too.
+- `app.py` registers both blueprints and enforces CSRF on POST/PUT/PATCH/DELETE. Authentication and every list write/logout form include tokens.
+- `todos.py` now contains the list/add/edit/done/open/delete routes. Every route checks the session identity; list queries filter by it and mutation predicates include it.
+- `todos.html` and `todos.js` contain forms, title validation, edit navigation, empty/done states, feedback and deletion confirmation.
+- `auth.js` now validates both auth forms and focuses the first invalid field; required/mismatch messages and UTF-8 password limits match server checks. Shared CSS/base layout remain empty; no submission screenshots exist.
 
-## Integration boundary: authentication ready, list endpoint still proposed
+## Integration completed
 
-| Boundary | Agreement to use |
+The blueprint registration, all to-do CSRF fields, authentication/list redirects, list logout, and auth browser validation are implemented. Live two-user MySQL integration checks passed; browser auth validation and the Node regression check passed. Temporary test accounts/tasks were removed.
+
+Do not repeat the previous blueprint/CSRF implementation tasks. Remaining work is invalid-ID handling, shared styling, full browser evidence and final setup/submission checks.
+
+## Integration contract
+
+| Boundary | Existing behavior / required next step |
 | --- | --- |
-| Identity | Use the existing `session["user_id"]` and `session["name"]`; never accept identity from a form. |
-| Private routes | Import `login_required` from `auth`. Put `@login_required` below the route decorator on every to-do route, including writes. The existing guard redirects to `auth.login`. |
-| To-do page | Proposed GET `/todos`, blueprint `todos`, view `index`, endpoint `todos.index`. Ibrahim still needs to implement it and confirm this naming. |
-| Redirects | Authentication currently redirects to `home`. Once the to-do endpoint exists and is registered, Moustafa changes both success redirects to `url_for("todos.index")`. |
-| CSRF | Every to-do POST form needs `<input type="hidden" name="csrf_token" value="{{ csrf_token }}">`. For fetch/FormData, send the same field; a JSON-only body is not supported by the current checker. Reload stale forms after authentication changes or a restart. |
-| Connections | Import `get_connection` from `db`; pass SQL values separately, commit successful writes, and close connections. Do not import the Flask `app` object into route modules. |
-| Isolation | Filter reads by the session user and include that user in every UPDATE/DELETE predicate. |
-| Logout | Use a POST form targeting `url_for('auth.logout')` with a CSRF token. Move the temporary login-page name/logout controls into the shared authenticated layout when ready. |
+| Identity | Authentication sets `session["user_id"]` and `session["name"]`; route code must never take user identity from a form. |
+| Private routes | Home uses `auth.login_required`. Existing to-do routes use their own positive-integer session check; keep it on every route. A rewrite solely to use the decorator is unnecessary. |
+| Blueprint | Implemented names: module `todos.py`, blueprint `todos`, view `index`, endpoint `todos.index`; GET `/todos`. It is now registered in `app.py`. |
+| Writes | POST `/todos`, `/todos/<todo_id>/edit`, `/todos/<todo_id>/done`, `/todos/<todo_id>/delete`. Done/open values use form field `status` with values `done` or `open`. |
+| Redirects | Both authentication success paths use `todos.index`; home also redirects to it. |
+| CSRF | Every write form needs `<input type="hidden" name="csrf_token" value="{{ csrf_token }}">`. FormData requests must include the same field; the checker does not read JSON. Reload forms after authentication/session changes. |
+| Logout | The list now has POST logout with CSRF token. The login-page control remains available too; styling/navigation can be consolidated into the future base layout. |
+| Connections | Import `get_connection` from `db`; pass SQL values separately, commit successful writes and close connections. Do not import the Flask app into route modules. |
+| Isolation | All list/mutation SQL already uses the session user's ID. Live two-user list/mutation checks passed in this change; retain ownership checks and collect final browser evidence. |
 
-Ibrahim can now integrate with real authentication. Keep test session values confined to isolated tests, not application code.
-
-## SQL contract for to-do features
-
-The table has `todo_id`, `user_id`, `title` (200 characters maximum), `is_done` (default 0), and `created_at`. Its foreign key references `users.user_id`; leave foreign-key actions at their defaults.
-
-Use the assignment queries with PyMySQL's `%s` placeholders:
+## SQL already used
 
 ```sql
 SELECT todo_id, title, is_done, created_at
 FROM todos WHERE user_id = %s ORDER BY todo_id DESC;
-
 INSERT INTO todos (user_id, title) VALUES (%s, %s);
-
 UPDATE todos SET title = %s WHERE todo_id = %s AND user_id = %s;
-
 UPDATE todos SET is_done = %s WHERE todo_id = %s AND user_id = %s;
-
 DELETE FROM todos WHERE todo_id = %s AND user_id = %s;
 ```
 
-Pass values separately to `cursor.execute(statement, values)`; do not use string formatting, interpolation, or f-strings to insert input into SQL. Every successful POST redirects so refreshing does not repeat a write.
+Values are supplied separately to `cursor.execute`. These statements are present, not future implementation tasks. The schema foreign key is `todos.user_id -> users.user_id` with default actions.
 
 ## Next tasks
 
 ### Moustafa
 
-1. Implement the existing `auth.js` hooks with exact browser validation messages while retaining server checks.
-2. Preserve safe name/email fields after validation errors; never refill passwords.
-3. With Ibrahim, integrate both success redirects with the real list endpoint and move name/logout controls into the authenticated layout.
-4. Complete shared styling and final browser checks, including JavaScript-disabled requests, fresh/stale CSRF forms, and required lab security cases.
+1. Review the new `auth.js` and its Node check so you can explain the required-field loop, mismatch handling, UTF-8 byte count, safe error rendering and focus behavior.
+2. Verify full browser journeys with JavaScript disabled and stale forms. Optionally preserve safe name/email values after errors, never passwords.
+3. Coordinate the shared layout/styling and final authentication evidence.
 
 ### Ibrahim
 
-1. Review and verify `todos` DDL with Moustafa. Do not repeatedly reset a database containing useful test accounts.
-2. Build the list template, empty-state message, and visible done state.
-3. Add private list/add/edit/done/delete routes using the SQL above and session-owned identity.
-4. Validate titles in both browser and server: `Title is required` for empty/space-only titles, `Title is too long` over 200 characters. Accept only valid done/open values and handle malformed IDs without stack traces.
-5. Ask for confirmation before deletion, show feedback, and redirect after successful writes.
+1. Fix the observed default malformed-ID 404 and 5000-digit-ID 500: bound input before conversion and render friendly errors.
+2. Verify existing to-do browser title checks, edit navigation and deletion confirmation. Check Unicode limits match server behavior.
+3. Keep all newly added CSRF fields and list logout when updating templates.
 
 ### Together
 
-- Register the to-do blueprint in `app.py` and agree on shared styling before editing shared files.
-- Check unauthenticated access, two different users in separate browsers, and attempts to change another user's to-do by sending its ID. The other user's row must remain unchanged.
-- Verify required messages with JavaScript enabled and disabled, duplicate email, unknown-email/wrong-password login, SQL-injection input, bcrypt hashes, and logout.
-- Check 360 px layout, collect four required screenshots, and write the four README explanations in your own words.
+- Build shared styling/base layout; check laptop and roughly 360 px widths, done/empty states and all error pages.
+- Run registration -> list -> writes -> logout with two real users in separate browsers. Attempts to change another user's ID must leave their rows unchanged.
+- Test schema/setup on a disposable lab database; never reset a database whose data should be kept.
+- Add four required screenshots and write the four README explanations in your own words. Verify both members' contributions.
 
-## Evidence and remaining limits
+## Verification and limits
 
-Fresh local Flask test-client checks passed for template hooks, all CSRF fields, token rejection/acceptance, validation, protected access, session rotation, login/logout, parameterized queries, duplicates, and database/hash failure handling. Database calls were mocked; no live SQL or account creation was performed during this update. Syntax and the static script response also passed.
+Current checks: live MySQL through Flask's test client passed for two-user registration/login/logout, list redirects, ownership isolation, CRUD, done/open, duplicate handling, server validation and CSRF rejection. Rendered list and edit forms all included tokens. Temporary accounts/tasks were removed; the schema and existing data were not reset.
 
-Moustafa reported live account persistence, duplicate prevention, stored hash comparison, login/logout, private home, and CSRF checks during tutoring. These reports are distinguished from the fresh mocked checks in README.
+Actual browser checks passed for auth required messages, password mismatch, oversized password, and a valid form reaching server-side login validation. The checked-in Node regression check passed for Unicode and UTF-8 limits, focus and submission blocking. It uses a simulated DOM, not a real browser.
 
-The complete schema reset, live to-do foreign key, clean-machine installation, two-user to-do isolation, browser validation, and responsive styling remain unverified. The in-memory session store is local to one server process.
+Earlier isolated mocked checks and ID failure findings preceded this integration; ID failures remain unresolved. A clean install/full schema reset, foreign-key rejection, complete JavaScript-disabled browser journeys, to-do browser confirmation, responsive styling and submission screenshots remain unverified. Sessions remain in-memory and local to one process.
 
-## Working together in Git
+## Git coordination
 
-See [COMMIT_PLAN.md](COMMIT_PLAN.md) for checkpoint history and the next small commits. Commit only your own understood work, coordinate shared-file edits, and pull before starting and before pushing. If Git reports a conflict or a divergent branch, stop and resolve it together rather than force-pushing. Nobody should commit `.env`, `.venv`, or test credentials.
+See [COMMIT_PLAN.md](COMMIT_PLAN.md) for history and future checkpoints. Save/review your own work before pulling. If local edits block a pull, commit them or stash the specific files and inspect the saved diff before restoring it; do not discard them to make a pull succeed. Resolve conflicts together and do not force-push. The pull screenshot from another clone is not evidence that this checkout has a stash or the same conflict.
