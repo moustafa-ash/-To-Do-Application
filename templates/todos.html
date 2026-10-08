@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My to-dos</title>
+    <script src="{{ url_for('static', filename='js/todos.js') }}" defer></script>
+</head>
+<body>
+    <header>
+        <h1>My to-dos</h1>
+        {% if name %}<p>Signed in as {{ name }}</p>{% endif %}
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul aria-live="polite" aria-atomic="true">
+                    {% for category, message in messages %}
+                        <li class="flash {{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <section aria-labelledby="add-heading">
+            <h2 id="add-heading">Add a to-do</h2>
+            <form method="post" action="{{ url_for('todos.add') }}" data-title-form>
+                <label for="new-title">Title</label>
+                <input id="new-title" name="title" type="text" maxlength="201"
+                       value="{{ title }}" data-title-input>
+                <button type="submit">Add</button>
+                <p data-title-error role="alert"></p>
+            </form>
+        </section>
+
+        <section aria-labelledby="list-heading">
+            <h2 id="list-heading">Your list</h2>
+            {% if not todos %}
+                <p class="empty-state">Your list is empty. Add a to-do to get started.</p>
+            {% else %}
+                <ul class="todo-list">
+                    {% for todo in todos %}
+                        <li class="todo-item{% if todo.is_done %} is-done{% endif %}">
+                            {% if edit_id == todo.todo_id %}
+                                <form method="post" action="{{ url_for('todos.edit', todo_id=todo.todo_id) }}" data-title-form>
+                                    <label for="edit-title-{{ todo.todo_id }}">Edit title</label>
+                                    <input id="edit-title-{{ todo.todo_id }}" name="title" type="text"
+                                           maxlength="201" value="{{ edit_title }}" data-title-input>
+                                    <button type="submit">Save</button>
+                                    <a href="{{ url_for('todos.index') }}">Cancel</a>
+                                    <p data-title-error role="alert"></p>
+                                </form>
+                            {% else %}
+                                <span class="todo-title">{{ todo.title }}</span>
+                                {% if todo.is_done %}<span class="done-label">Done</span>{% endif %}
+                                <form method="post" action="{{ url_for('todos.set_done', todo_id=todo.todo_id) }}">
+                                    {% if todo.is_done %}
+                                        <input type="hidden" name="status" value="open">
+                                        <button type="submit">Mark open</button>
+                                    {% else %}
+                                        <input type="hidden" name="status" value="done">
+                                        <button type="submit">Mark done</button>
+                                    {% endif %}
+                                </form>
+                                <a href="{{ url_for('todos.index', edit=todo.todo_id) }}" data-edit-link="{{ todo.todo_id }}">Edit</a>
+                                <form method="post" action="{{ url_for('todos.delete', todo_id=todo.todo_id) }}" data-delete-form>
+                                    <button type="submit">Delete</button>
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>
