@@ -1,8 +1,8 @@
 # Commit plan
 
-Updated on 8 October 2026 after publishing the first implementation checkpoint.
+Updated on 8 October 2026 for the authentication checkpoint and browser-validation HTML preparation.
 
-## Published checkpoint
+## Earlier published checkpoints
 
 - Initial repository commit: `e5b4dad` (`Initial commit`), containing `.gitignore`.
 - First implementation commit: [49c9471](https://github.com/moustafa-ash/-To-Do-Application/commit/49c9471903c9fc7d155dfd4461056e60564bd1e4).
@@ -13,7 +13,7 @@ Updated on 8 October 2026 after publishing the first implementation checkpoint.
 
 GitHub initially rejected the push because the author email was private. The unpublished commit was amended to use the noreply address already present in the published initial commit, then pushed successfully. Repository-local `user.email` now uses that noreply address; global configuration and GitHub privacy settings were not changed.
 
-This checkpoint does not implement persisted registration, login/logout, a private list, or to-do application behavior. Authentication remains unfinished.
+The first implementation checkpoint did not contain persisted authentication. The later documentation update was published as `15e1402` (`update to docs`). The current revision adds the authentication progress below; to-do behavior is still unfinished.
 
 ## Verification attached to the checkpoint
 
@@ -25,24 +25,43 @@ This checkpoint does not implement persisted registration, login/logout, a priva
 
 The complete DDL reset, clean-machine setup, live to-do foreign key, account creation, two-user isolation, and final browser journeys were not verified. Do not describe them as passed.
 
+## Authentication checkpoint: this revision
+
+Commit message: `Add account authentication, CSRF protection, and form validation hooks`.
+
+Scope: the tutoring work in `app.py` and `auth.py`; register/login templates; the custom CSRF error page; updated README, handoff, and this plan. Includes registration persistence, bcrypt comparison, session identity/rotation, login/logout, protected home, and global CSRF form checks. The requested HTML preparation loads the empty `auth.js`; JavaScript validation is not implemented.
+
+Fresh local syntax, template/form/token checks, Flask validation, CSRF rejection/acceptance, protected access, session rotation, login/logout, parameterized query handling, duplicate-email and database/hash failure checks passed. Database calls were mocked. Moustafa separately reported the live checks listed in README; no live SQL or reset was run during this revision.
+
+Exact staging scope for this checkpoint:
+
+```powershell
+git add -- app.py auth.py templates/register.html templates/login.html templates/csrf_error.html README.md docs/HANDOFF.md docs/COMMIT_PLAN.md
+git diff --cached --stat
+git diff --cached --check
+git diff --cached
+```
+
+Review these files and exclude credentials, virtual environments, unrelated changes, and teammate work. The schema is not changed by this checkpoint. Verify the pushed commit on GitHub after publishing; the commit containing this document identifies this revision.
+
 ## Next small implementation commits
 
 | Owner | Suggested commit message | Scope and checks |
 | --- | --- | --- |
-| Moustafa | `Add registration persistence and authenticated sessions` | Parameterized INSERT, bcrypt hash, duplicate-email message, transaction/connection handling, authenticated identity, and POST redirect. Check successful registration, duplicate email, stored hash, invalid input without a write, and database failure handling. Agree on an existing redirect endpoint before wiring it. |
-| Moustafa | `Add login and logout` | Parameterized lookup, bcrypt comparison, shared `Invalid email or password` message, session lifecycle, and private-route agreement. Check correct/wrong passwords, unknown email, injection input, logout, and unauthenticated access. |
-| Ibrahim | `Add private to-do listing and creation` | Register the agreed blueprint, show only the session user's rows newest first, add titles with validation, and show an empty state. Check two users, logged-out access, title boundaries, and foreign-key behavior. Integrated checks depend on real authentication. |
-| Ibrahim | `Add to-do editing, completion, and deletion` | Edit title, mark done/open, confirm deletion, and include the session user in every mutation predicate. Check malformed input and attempts to change another user's rows. |
-| Both, with one shared-file editor at a time | `Add browser validation and shared responsive layout` | Exact lab messages in the browser while retaining server checks; shared styling, feedback, name/logout controls, empty/done states. Check JavaScript on/off and about 360 px width. |
-| Both | `Document verified lab setup and submission evidence` | Reconcile R1-R10, verify setup on a fresh environment and reset only a disposable lab database, add four screenshots and the four explanations in your own words. Record actual contributors. |
+| Moustafa | `Add browser authentication validation` | Implement `auth.js` against the existing form markers/error containers. Check exact messages before submission, safe text rendering, matching passwords and length limits; retain server checks with JavaScript disabled. |
+| Moustafa | `Preserve safe authentication form values` | Retain names/emails after errors, never passwords. Check HTML escaping and that sensitive values are not refilled. |
+| Ibrahim | `Add private to-do listing and creation` | Register the agreed blueprint, apply `login_required`, use session-owned identity, include CSRF fields, list newest first, validate/add titles and empty state. Check two users, logged-out access, title limits, and foreign-key behavior. |
+| Ibrahim | `Add to-do editing, completion, and deletion` | Edit title, done/open state, deletion confirmation, CSRF tokens and user-scoped predicates. Check malformed input and cross-user mutation attempts. |
+| Both, one shared-file editor at a time | `Integrate authentication with the to-do layout` | Replace temporary home redirects after the list endpoint exists; move name/logout controls into shared layout and add responsive styling. Check about 360 px and full authentication/list journeys. |
+| Both | `Document verified lab setup and submission evidence` | Reconcile R1-R10, verify clean setup and reset only a disposable database, add four screenshots and the four explanations in your own words. Record actual contributors. |
 
-These are proposed checkpoints, not completed work or rigid schedules. Each teammate must make their own commits and understand both parts of the application. Keep bonus features out until required behavior is complete.
+Each teammate must make their own commits and understand both parts. Keep bonus features out until required behavior is complete.
 
 ## Routine for each future commit
 
-1. Coordinate shared-file ownership and save the intended changes. Pull before starting; pull again before pushing.
-2. Run checks for the behavior changed. Keep current README claims accurate.
-3. Inspect Git and credentials from the repository root:
+1. Coordinate shared-file ownership; pull before starting and before pushing.
+2. Save and check the actual changed behavior. Keep README evidence accurate.
+3. Inspect changes and credential exclusions:
 
 ```powershell
 git status --short
@@ -51,31 +70,14 @@ git check-ignore .env .venv
 git ls-files -- .env
 ```
 
-The ignored-path check should print `.env` and `.venv`; the tracked-file check for `.env` should print nothing. Keep only fake values in `.env.example`. Do not include credentials, bytecode, local dumps, or unrelated work.
+The ignored-path check should print `.env` and `.venv`; the tracked-file check for `.env` should print nothing. Keep only fake values in `.env.example`.
 
-4. Stage only files belonging to that commit. For example, if a registration change touches only these two files:
-
-```powershell
-git add -- auth.py templates/register.html
-git diff --cached --stat
-git diff --cached --check
-git diff --cached
-```
-
-Include other files only if that change actually needs them. Fix reported whitespace issues and restage. Review the content before committing.
-
-5. Commit with the message matching the actual completed scope, then review `git status --short`. A local commit does not publish the work.
-6. When ready to publish:
+4. Stage only the files belonging to the completed change, inspect the staged diff, and pass `git diff --cached --check` before committing with a matching message.
+5. Before publishing:
 
 ```powershell
 git pull --ff-only
 git push origin main
 ```
 
-If a pull reports divergent history or a conflict, resolve it together before pushing. Do not force-push over teammate work. Verify that the pushed commit is on GitHub.
-
-## This plan update
-
-This document records the completed publication and replaces the original first-commit instructions. Editing it does not create another commit or push.
-
-If publishing just this documentation update later, its scope is `docs/COMMIT_PLAN.md` and a suitable message is `Update commit plan after publishing initial checkpoint`.
+If histories diverge or conflicts occur, resolve them together before pushing. Do not force-push over teammate work. Confirm GitHub contains the pushed commit.

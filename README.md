@@ -9,15 +9,15 @@ A team project for Introduction to Database Systems at Alexandria National Unive
 | Moustafa Mohamed | 2304252 | Accounts, authentication, and initial shared setup |
 | Ibrahim Hossam | 2304248 | Personal to-do features |
 
-Shared files have one editor at a time. Both teammates must make commits and understand both tables and all application code. See [the teammate handoff](docs/HANDOFF.md) and [the first implementation commit plan](docs/COMMIT_PLAN.md).
+Shared files have one editor at a time. Both teammates must make commits and understand both tables and all application code. See [the teammate handoff](docs/HANDOFF.md) and [the commit plan](docs/COMMIT_PLAN.md).
 
 ## Technology
 
 - Python and Flask; the current environment uses Python 3.14.4.
 - MySQL with PyMySQL and plain SQL; no ORM.
 - Flask-Session with cachelib for server-side sessions.
-- bcrypt installed for password hashing; not yet connected to registration.
-- HTML templates. CSS and JavaScript files currently contain no implementation.
+- bcrypt for registration hashing and login password comparison.
+- HTML templates, including a CSRF error page. Authentication pages load `auth.js`, but that file is still empty; CSS and JavaScript validation are not implemented.
 - python-dotenv for local configuration. Package versions are pinned in `requirements.txt`.
 
 ## Current status
@@ -25,15 +25,19 @@ Shared files have one editor at a time. Both teammates must make commits and und
 | Area | Implemented now | Still needed |
 | --- | --- | --- |
 | Database | DDL for `users` and `todos`, including the foreign key; connection helper returns dictionary rows | Verify the complete reset script and the live `todos` constraints |
-| R1: registration | Four-field form, GET/POST route, server-side validation | Hash and insert accounts, handle duplicate email, create the authenticated session, redirect to the list |
-| R2: login/logout | Nothing yet | Login, shared error message, logout |
-| R3: private list | Session storage configured | Authentication guard and per-user list |
+| R1: registration | Server validation, bcrypt hash, parameterized INSERT, duplicate-email handling, authenticated session, POST redirect | Replace the temporary home redirect with the real list endpoint when ready |
+| R2: login/logout | Parameterized lookup, bcrypt comparison, shared invalid-credentials message, POST logout | Final UI and integration with the list page |
+| R3: private list | Reusable `login_required` guard; home route is protected | Apply guard to every to-do route and implement the per-user list |
 | R4-R7: to-dos | Table definition only | Add, edit, mark done/open, delete with confirmation |
-| R8: validation | Registration required fields, matching passwords, column-length limits, bcrypt's 72-byte password limit | JavaScript checks with exact lab messages; to-do validation; retain safe form values on errors |
-| R9: security | Credentials loaded from `.env`; server-side session configuration | Application bcrypt hashing/checking and parameterized queries with session-owned `user_id` |
-| R10: interface | Basic labeled registration form and error list | Shared styling, responsive layout, empty/done states, logged-in name and logout |
+| R8: validation | Registration/login server checks; registration mismatch and length limits; HTML hooks for browser validation | Implement `auth.js`, to-do validation, and retention of safe form values on errors |
+| R9: security | bcrypt, parameterized authentication queries, server-side identity, rotated session ID, CSRF tokens/checks, friendly failure messages | Session-owned `user_id` in every to-do query; CSRF token in every future write form |
+| R10: interface | Basic labeled register/login forms, persistent error lists, CSRF error page; temporary name/logout controls on login page | Shared styling, responsive layout, empty/done states, move name/logout controls to the list |
 
-`/` currently displays `To-Do application is running`. `/register` displays and validates a form. Even a valid registration currently just redisplays the page: **it does not create an account**. `/login` and `/todos` do not exist yet.
+`/register` now creates accounts and logs them in; `/login` authenticates existing accounts. Both redirect to `/`, which shows `To-Do application is running` only for authenticated users and otherwise redirects to login. POST `/logout` clears the session and redirects to login. The logout control is temporarily displayed on `/login` when already logged in. `/todos` does not exist yet.
+
+Registration and login forms have `data-auth` markers and an always-present `#form-errors` list. Both load the empty `static/js/auth.js` with `defer`. These are preparation for browser validation, not working JavaScript validation.
+
+Every POST/PUT/PATCH/DELETE is checked for a session-bound CSRF form token before the route runs. A missing or invalid token returns a custom page with HTTP 400. Load a current form before submitting; login, registration, logout, or a server restart can invalidate tokens in older tabs. Future write forms must include the hidden `csrf_token` field.
 
 The browser's `type="email"` checks basic syntax. The server currently checks that email is present and within the database length limit; it does not verify inbox ownership.
 
@@ -52,7 +56,7 @@ git clone https://github.com/moustafa-ash/-To-Do-Application.git
 cd .\-To-Do-Application
 ```
 
-The checkpoint files must be committed and pushed before a teammate can obtain them through this clone command. If the repository is already open in VS Code, use its terminal from the project root instead.
+If the repository is already open in VS Code, use its terminal from the project root instead. Existing teammates should pull the published changes before starting work.
 
 ### 2. Create the Python environment
 
@@ -125,7 +129,7 @@ This checks connection settings without changing database data. If it fails, che
 .\.venv\Scripts\python.exe -m flask --app app run
 ```
 
-Open `http://127.0.0.1:5000/` and `http://127.0.0.1:5000/register`. Keep the terminal running. Stop with Ctrl+C and restart after Python code changes; this command does not enable automatic reloading.
+Open `http://127.0.0.1:5000/register` to create an account, or `http://127.0.0.1:5000/login` to use one. Successful authentication opens the protected home page. Visit `/login` while logged in to use the temporary logout button. Keep the terminal running. Stop with Ctrl+C and restart after Python code changes; this command does not enable automatic reloading.
 
 The session store is in memory. It is suitable for this local, single-process lab checkpoint; restarting Flask clears sessions. It is not a shared session store for multiple server processes. The Flask development server is for local development.
 
@@ -133,25 +137,26 @@ The session store is in memory. It is suitable for this local, single-process la
 
 | Path | Purpose / current state |
 | --- | --- |
-| `app.py` | Flask configuration, session setup, authentication blueprint registration, home route |
-| `auth.py` | Authentication blueprint; currently registration validation only |
+| `app.py` | Flask/session setup, CSRF injection/check, authentication blueprint, protected home route |
+| `auth.py` | Registration, login, logout, and reusable `login_required` decorator |
 | `db.py` | Shared `get_connection()` helper; callers must close connections and commit successful writes |
 | `todos.py` | Empty placeholder for Ibrahim's routes |
 | `database/schema.sql` | Destructive, re-runnable DDL for both tables; no seed data |
-| `templates/register.html` | Basic registration form and server error list |
-| `templates/base.html`, `login.html`, `todos.html` | Empty placeholders |
+| `templates/register.html`, `templates/login.html` | Authentication forms, CSRF fields, error containers, deferred script loading |
+| `templates/csrf_error.html` | Friendly missing/invalid-token response |
+| `templates/base.html`, `templates/todos.html` | Empty placeholders |
 | `static/css/style.css`, `static/js/auth.js`, `static/js/todos.js` | Empty placeholders |
 | `screenshots/` | Reserved for submission evidence; no screenshots supplied yet |
 
 ## Verification recorded on 8 October 2026
 
-Local checks run during documentation preparation passed: Python source compilation without generating bytecode; GET `/` and GET `/register`; POST registration required-field messages, password mismatch, name/email length limits, ASCII and multibyte password byte limits; a server-side session write/read through Flask's test client; an isolated bcrypt correct/wrong-password experiment; installed versions matching `requirements.txt`.
+Fresh local checks for this authentication checkpoint passed: Python syntax; rendered registration/login/logout CSRF fields; form markers, persistent error containers, and deferred script loading; static `auth.js` response; registration/login required fields and password/length limits; missing, incorrect, and non-ASCII CSRF token rejection; accepted tokens reaching validation; protected home access; authenticated session identity/rotation and logout; duplicate-email handling; parameterized registration/login queries; wrong/unknown/oversized login passwords; malformed stored hashes; and friendly database-failure responses.
 
-These checks use Flask's test client, not a browser. They do not exercise account creation or to-do behavior. No automated test suite has been added to the repository.
+These checks used Flask's test client. Authentication database calls were mocked: the checks verified application behavior and generated hash comparison, not a live MySQL journey. No persistent automated test suite has been added to the repository. The JavaScript file was verified as empty, so browser validation remains unfinished.
 
-Moustafa reported successful local browser checks of the home/registration pages and validation, a live Python/MySQL connection through `get_connection()`, and database checks of the `users` table: generated ID/timestamp, duplicate email error 1062, and test-row deletion. These earlier results were not re-run against MySQL during this documentation update.
+Moustafa reported successful live checks during tutoring: Python/MySQL connection; users-table ID/timestamp and duplicate constraints; temporary-row deletion; registration persistence with a bcrypt hash; duplicate registration leaving one account; comparison of the stored hash against the correct password; empty/correct/wrong/unknown-email login cases; logged-in identity and logout; private home access; and rejection/acceptance of CSRF submissions. These reported live results were not repeated against MySQL during this update.
 
-The full reset script, live `todos` foreign-key behavior, installation on an empty machine, JavaScript-disabled browser checks, responsive design, and complete two-user journeys remain unverified.
+The full reset script, live `todos` foreign-key behavior, installation on an empty machine, browser validation with JavaScript on/off, responsive design, and complete two-user to-do journeys remain unverified.
 
 ## Before submission
 

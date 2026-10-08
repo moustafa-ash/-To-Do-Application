@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Log in</title>
+    <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
+</head>
+<body>
+    <h1>Log in</h1>
+    {% if session.get("user_id") %}
+        <p>You are logged in as {{ session.get("name") }}.</p>
+
+        <form method="post" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit">Log out</button>
+        </form>
+    {% endif %}
+
+    <ul id="form-errors" role="alert">
+        {% for error in errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+    </ul>
+
+    <form method="post" action="/login" data-auth="login">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <p>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email"
+                autocomplete="email">
+        </p>
+
+        <p>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password"
+                autocomplete="current-password">
+        </p>
+
+        <button type="submit">Log in</button>
+    </form>
+</body>
+</html>

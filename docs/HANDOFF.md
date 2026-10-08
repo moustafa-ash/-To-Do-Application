@@ -11,27 +11,31 @@ Checkpoint: 8 October 2026. This is a development handoff, not a finished applic
 
 ## What is ready
 
-- Flask starts and serves `/` and `/register`.
-- `auth.py` is a registered blueprint with registration GET/POST validation.
-- Registration validates required fields, matching passwords, name/email lengths, and bcrypt's 72-byte password limit. It does not save users.
-- `db.get_connection()` reads local environment settings and returns a PyMySQL connection with dictionary rows. It does not automatically commit writes. Use parameterized values, commit successful writes, and always close connections.
-- Server-side sessions use an in-memory cache; the session round-trip check passed. Sessions currently do not represent real logged-in accounts.
-- `database/schema.sql` defines both required tables, with `users` created before `todos`.
+- Registration validates input, bcrypt-hashes passwords, inserts with parameters, handles duplicate email, populates the session, rotates its ID, and redirects to protected home.
+- Login uses a parameterized lookup and bcrypt comparison. Wrong passwords and unknown emails both show `Invalid email or password`. POST logout clears the session.
+- `session["user_id"]` and `session["name"]` now represent the authenticated account.
+- `auth.login_required` is implemented and applied to `/`; unauthenticated requests redirect to `auth.login`.
+- `app.py` checks CSRF form tokens before every POST/PUT/PATCH/DELETE. All three current forms include the hidden token; failed checks get a custom HTTP 400 page.
+- Registration/login templates have `data-auth` markers, an always-present `#form-errors` list, and deferred loading of `static/js/auth.js`. The script is empty; browser validation is next.
+- `db.get_connection()` returns dictionary rows. Callers must commit successful writes and close connections; the authentication routes already do this.
+- `database/schema.sql` defines both required tables; it deletes all `registration` data when run. Memory sessions disappear on server restart.
 
-Follow [README setup instructions](../README.md). Each teammate needs their own local MySQL database and `.env`. Running the full schema script deletes all data in `registration`.
+Follow [README setup instructions](../README.md). Each teammate needs their own MySQL and `.env`.
 
-## Proposed integration agreement: confirm together before implementing
+## Integration boundary: authentication ready, list endpoint still proposed
 
 | Boundary | Agreement to use |
 | --- | --- |
-| Identity | After successful registration/login, Moustafa sets `session["user_id"]` and `session["name"]`. Clear previous session contents when authenticating; logout clears the session. These values are not yet populated by the application. |
-| To-do page | Ibrahim exposes GET `/todos`, using a blueprint named `todos` and a view named `index`, so the endpoint is `todos.index`. This is a proposed endpoint, not an existing route. |
-| Redirects | Successful registration/login redirects to `url_for("todos.index")` after that endpoint is implemented and registered. Do not wire this redirect to a nonexistent endpoint. |
-| Private access | Every to-do route checks the authenticated session. If `user_id` is missing, redirect to login once Moustafa's login route exists. Do not temporarily hard-code a real user's ID. |
-| Shared connection | Import `get_connection` from `db`. Do not import the Flask `app` object into either route module; that can create circular imports. |
-| Isolation | Get `user_id` from the session, never from browser fields. Filter reads by it and include it in every UPDATE/DELETE predicate. |
+| Identity | Use the existing `session["user_id"]` and `session["name"]`; never accept identity from a form. |
+| Private routes | Import `login_required` from `auth`. Put `@login_required` below the route decorator on every to-do route, including writes. The existing guard redirects to `auth.login`. |
+| To-do page | Proposed GET `/todos`, blueprint `todos`, view `index`, endpoint `todos.index`. Ibrahim still needs to implement it and confirm this naming. |
+| Redirects | Authentication currently redirects to `home`. Once the to-do endpoint exists and is registered, Moustafa changes both success redirects to `url_for("todos.index")`. |
+| CSRF | Every to-do POST form needs `<input type="hidden" name="csrf_token" value="{{ csrf_token }}">`. For fetch/FormData, send the same field; a JSON-only body is not supported by the current checker. Reload stale forms after authentication changes or a restart. |
+| Connections | Import `get_connection` from `db`; pass SQL values separately, commit successful writes, and close connections. Do not import the Flask `app` object into route modules. |
+| Isolation | Filter reads by the session user and include that user in every UPDATE/DELETE predicate. |
+| Logout | Use a POST form targeting `url_for('auth.logout')` with a CSRF token. Move the temporary login-page name/logout controls into the shared authenticated layout when ready. |
 
-Ibrahim can work on the template and route structure before authentication is ready. Integrated private-route tests require Moustafa's real registration/login flow. Artificial session values may be used only in isolated tests, not in application code.
+Ibrahim can now integrate with real authentication. Keep test session values confined to isolated tests, not application code.
 
 ## SQL contract for to-do features
 
@@ -58,11 +62,10 @@ Pass values separately to `cursor.execute(statement, values)`; do not use string
 
 ### Moustafa
 
-1. Hash and insert valid registrations with parameters; handle duplicate email as `Email Already Exists` and database failures without raw error pages.
-2. Populate the session and redirect after successful registration once the list endpoint is ready.
-3. Implement login using bcrypt comparison. Unknown email and wrong password both show `Invalid email or password`.
-4. Implement logout and agree with Ibrahim on the private-route guard.
-5. Add browser validation with the exact required-field/mismatch messages; preserve server checks when JavaScript is disabled. Preserve safe form values on errors, never passwords.
+1. Implement the existing `auth.js` hooks with exact browser validation messages while retaining server checks.
+2. Preserve safe name/email fields after validation errors; never refill passwords.
+3. With Ibrahim, integrate both success redirects with the real list endpoint and move name/logout controls into the authenticated layout.
+4. Complete shared styling and final browser checks, including JavaScript-disabled requests, fresh/stale CSRF forms, and required lab security cases.
 
 ### Ibrahim
 
@@ -81,10 +84,12 @@ Pass values separately to `cursor.execute(statement, values)`; do not use string
 
 ## Evidence and remaining limits
 
-Fresh local Flask test-client checks passed for routes, registration validation including multibyte byte limits, and session storage. Syntax, installed dependency pins, and the isolated bcrypt comparison also passed. Earlier live MySQL and browser results were reported by Moustafa; see README for their scope.
+Fresh local Flask test-client checks passed for template hooks, all CSRF fields, token rejection/acceptance, validation, protected access, session rotation, login/logout, parameterized queries, duplicates, and database/hash failure handling. Database calls were mocked; no live SQL or account creation was performed during this update. Syntax and the static script response also passed.
 
-The complete schema reset, live to-do foreign key, account creation, login/logout, to-do routes, two-user isolation, and responsive styling have not been verified. Memory sessions disappear when Flask restarts and are not shared across server processes.
+Moustafa reported live account persistence, duplicate prevention, stored hash comparison, login/logout, private home, and CSRF checks during tutoring. These reports are distinguished from the fresh mocked checks in README.
+
+The complete schema reset, live to-do foreign key, clean-machine installation, two-user to-do isolation, browser validation, and responsive styling remain unverified. The in-memory session store is local to one server process.
 
 ## Working together in Git
 
-See [COMMIT_PLAN.md](COMMIT_PLAN.md) for the checkpoint's proposed staging list. Commit only your own understood work, coordinate shared-file edits, and pull before starting and before pushing. If Git reports a conflict or a divergent branch, stop and resolve it together rather than force-pushing. Nobody should commit `.env`, `.venv`, or test credentials.
+See [COMMIT_PLAN.md](COMMIT_PLAN.md) for checkpoint history and the next small commits. Commit only your own understood work, coordinate shared-file edits, and pull before starting and before pushing. If Git reports a conflict or a divergent branch, stop and resolve it together rather than force-pushing. Nobody should commit `.env`, `.venv`, or test credentials.
