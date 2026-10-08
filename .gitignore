@@ -219,7 +219,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Local Impeccable chooser and visual-review caches
-.impeccable/questions/
-.impeccable/review/
-.impeccable/mocks/
+# Local planning and design files (not part of the submission)
+docs/
+.impeccable/
+DESIGN.md
+PRODUCT.md
+design.mf

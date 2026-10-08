@@ -47,7 +47,7 @@ def _get_user_todos(user_id):
         with connection.cursor() as cursor:
             cursor.execute(
                 """SELECT todo_id, title, is_done, created_at
-                   FROM todos WHERE user_id = %s ORDER BY todo_id DESC""",
+                    FROM todos WHERE user_id = %s ORDER BY todo_id DESC""",
                 (user_id,),
             )
             return cursor.fetchall()

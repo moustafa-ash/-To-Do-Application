@@ -6,7 +6,7 @@ const base = process.argv[2];
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/);
 const screenshots = path.resolve("screenshots");
 fs.mkdirSync(screenshots, { recursive: true });
-const reviewScreenshots = path.resolve(".impeccable/review");
+const reviewScreenshots = path.join(require("node:os").tmpdir(), "todo-browser-review");
 fs.mkdirSync(reviewScreenshots, { recursive: true });
 const shot = async (page, name) => {
     await page.evaluate(() => {
@@ -34,6 +34,73 @@ async function checkLayout(page, name, width) {
     console.log(`PASS layout: ${name} at ${width}px`);
 }
 
+async function checkThemes(page, name) {
+    for (const theme of ["light", "dark"]) {
+        if (await page.locator("html").getAttribute("data-theme") !== theme) {
+            await page.locator("#theme-toggle").click();
+        }
+        assert.equal(await page.locator("html").getAttribute("data-theme"), theme);
+        const next = theme === "dark" ? "light" : "dark";
+        const toggle = page.getByRole("button", { name: `Switch to ${next} mode` });
+        assert.ok(await toggle.isVisible());
+        assert.equal(await toggle.getAttribute("title"), `Switch to ${next} mode`);
+        assert.equal(await toggle.locator(".theme-moon").isVisible(), theme === "light");
+        assert.equal(await toggle.locator(".theme-sun").isVisible(), theme === "dark");
+        const colors = await page.evaluate(() => {
+            const style = getComputedStyle(document.documentElement);
+            return Object.fromEntries(["ink", "muted", "ground", "sheet", "accent", "accent-hover",
+                "accent-active", "on-action", "danger", "danger-surface", "danger-fill", "danger-hover",
+                "on-danger", "success", "success-surface", "selection", "brand", "cover", "status",
+                "input-border", "action-surface", "quiet-surface", "flash-surface"]
+                .map(name => [name, style.getPropertyValue(`--${name}`).trim()]));
+        });
+        function luminance(hex) {
+            const channels = hex.slice(1).match(/../g).map(value => parseInt(value, 16) / 255)
+                .map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+            return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+        }
+        function contrast(foreground, background, minimum = 4.5) {
+            const values = [luminance(foreground), luminance(background)].sort((a, b) => a - b);
+            const ratio = (values[1] + .05) / (values[0] + .05);
+            assert.ok(ratio >= minimum, `${theme}: ${foreground} on ${background} contrast ${ratio}`);
+        }
+        for (const surface of ["ground", "sheet", "quiet-surface", "flash-surface"]) {
+            for (const ink of ["ink", "muted"]) contrast(colors[ink], colors[surface]);
+        }
+        for (const surface of ["ground", "sheet", "action-surface"]) {
+            contrast(colors.accent, colors[surface]);
+            contrast(colors["accent-hover"], colors[surface]);
+        }
+        for (const fill of ["accent", "accent-hover", "accent-active"]) contrast(colors["on-action"], colors[fill]);
+        for (const fill of ["danger-fill", "danger-hover"]) contrast(colors["on-danger"], colors[fill]);
+        contrast(colors.danger, colors["danger-surface"]);
+        contrast(colors.danger, colors.sheet);
+        contrast(colors.success, colors["success-surface"]);
+        contrast(colors.success, colors.sheet);
+        contrast(colors.ink, colors.selection);
+        contrast(colors.brand, colors.sheet);
+        contrast("#cfdeef", colors.cover);
+        contrast(colors.status, colors.sheet, 3);
+        contrast(colors["input-border"], colors.sheet, 3);
+        for (const width of [1366, 700, 460, 441, 360]) {
+            await checkLayout(page, `${name} (${theme})`, width);
+            if (name === "login" && width === 441) await shot(page, `review-${theme}-login-441.png`);
+            if (name === "populated list" && (width === 441 || width === 460)) {
+                const label = page.locator(".account-name");
+                const original = await label.textContent();
+                await label.evaluate(el => { el.textContent = "Hi, " + "Longname".repeat(12) + "xxxx"; });
+                await checkLayout(page, `long account name (${theme})`, width);
+                await label.evaluate((el, value) => { el.textContent = value; }, original);
+            }
+            if (name === "populated list" && theme === "dark" && (width === 1366 || width === 360)) {
+                await shot(page, width === 1366 ? "05-todos-dark-desktop.png" : "06-todos-dark-mobile-360.png");
+            }
+        }
+        if (theme === "dark") await shot(page, `review-dark-${name.replaceAll(" ", "-")}-mobile.png`);
+    }
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+}
+
 async function run(browser, enabled) {
     const contexts = await Promise.all([browser.newContext({ javaScriptEnabled: enabled, viewport: {width: 1366, height: 900} }),
         browser.newContext({ javaScriptEnabled: enabled, viewport: {width: 1366, height: 900} })]);
@@ -48,11 +115,30 @@ async function run(browser, enabled) {
         await a.getByRole("button", { name: "Log in", exact: true }).click();
         for (const message of ["Email is required", "Password is required"]) assert.ok(await a.getByText(message, {exact:true}).isVisible());
         if (enabled) {
-            for (const width of [1366, 360]) await checkLayout(a, "login", width);
+            await a.locator("#theme-toggle").focus();
+            await a.keyboard.press("Space");
+            assert.equal(await a.locator("html").getAttribute("data-theme"), "dark");
+            assert.equal(await a.evaluate(() => localStorage.getItem("todo-theme")), "dark");
+            await a.reload();
+            assert.equal(await a.locator("html").getAttribute("data-theme"), "dark");
+            await a.goto(base + "/register");
+            assert.equal(await a.locator("html").getAttribute("data-theme"), "dark");
+            await a.goto(base + "/login");
+            await a.locator("#theme-toggle").focus();
+            await a.keyboard.press("Enter");
+            assert.equal(await a.locator("html").getAttribute("data-theme"), "light");
+            await a.reload();
+            assert.equal(await a.locator("html").getAttribute("data-theme"), "light");
+            await a.getByRole("button", { name: "Log in", exact: true }).click();
+            await checkThemes(a, "login");
             await shot(a, "review-login-mobile.png");
             await a.setViewportSize({width:1366,height:900});
             await a.goto(base + "/login");
             await shot(a, "02-login-desktop.png");
+        }
+        if (!enabled) {
+            assert.equal(await a.locator("#theme-toggle").isVisible(), false);
+            assert.equal(await a.locator("html").getAttribute("data-theme"), "light");
         }
         await a.goto(base + "/register");
         let registrationPosts = 0;
@@ -63,7 +149,7 @@ async function run(browser, enabled) {
         assert.equal(registrationPosts, enabled ? 0 : 1);
         if (enabled) {
             assert.equal(await a.locator("#name").evaluate(el => el === document.activeElement), true);
-            for (const width of [1366, 360]) await checkLayout(a, "registration errors", width);
+            await checkThemes(a, "registration errors");
             await shot(a, "review-register-errors-mobile.png");
             await a.setViewportSize({width:1366,height:900});
             await shot(a, "01-register-errors-desktop.png");
@@ -79,7 +165,7 @@ async function run(browser, enabled) {
             assert.ok(await page.getByText("Your list is empty", {exact:false}).isVisible());
         }
         if (enabled) {
-            for (const width of [1366,360]) await checkLayout(a, "empty list", width);
+            await checkThemes(a, "empty list");
             await shot(a, "review-empty-mobile.png");
         }
         await a.setViewportSize({width:1366,height:900});
@@ -115,7 +201,7 @@ async function run(browser, enabled) {
         }
         await lecture.getByRole("link", {name:"Edit",exact:true}).click();
         if (enabled) {
-            for (const width of [1366,360]) await checkLayout(a, "inline editing", width);
+            await checkThemes(a, "inline editing");
             await shot(a, "review-edit-mobile.png");
             await a.setViewportSize({width:1366,height:900});
         }
@@ -128,7 +214,7 @@ async function run(browser, enabled) {
         await a.waitForLoadState("load");
         assert.equal(await a.locator(".todo-item.is-done").count(), 1);
         if (enabled) {
-            for (const width of [1366,360]) await checkLayout(a, "populated list", width);
+            await checkThemes(a, "populated list");
             await shot(a, "04-todos-mobile-360.png");
             await a.setViewportSize({width:1366,height:900});
             await shot(a, "03-todos-desktop.png");
@@ -145,7 +231,7 @@ async function run(browser, enabled) {
         await a.getByRole("button", {name:"Add to-do",exact:true}).click();
         await a.waitForLoadState("load");
         assert.equal(await a.locator(".todo-item").count(), 4);
-        if (enabled) for (const width of [1366,360]) await checkLayout(a, "long Unicode title", width);
+        if (enabled) await checkThemes(a, "long Unicode title");
         const longRow = a.locator(".todo-item").filter({hasText:"😀".repeat(200)});
         if (enabled) {
             a.once("dialog", dialog => dialog.dismiss());
@@ -174,14 +260,14 @@ async function run(browser, enabled) {
         await a.goto(base + "/todos?edit=" + "9".repeat(5000));
         assert.ok(await a.getByRole("heading", {name:"This page or to-do isn't available"}).isVisible());
         if (enabled) {
-            for (const width of [1366,360]) await checkLayout(a, "friendly 404", width);
+            await checkThemes(a, "friendly 404");
             await shot(a, "review-error-mobile.png");
             await a.goto(base + "/todos");
             await a.locator('form[data-title-form] input[name="csrf_token"]').first().evaluate(el => el.remove());
             await a.locator("#new-title").fill("Missing token check");
             await a.getByRole("button", {name:"Add to-do",exact:true}).click();
             await a.waitForLoadState("load");
-            for (const width of [1366,360]) await checkLayout(a, "CSRF recovery", width);
+            await checkThemes(a, "CSRF recovery");
             await shot(a, "review-csrf-mobile.png");
         }
         await a.goto(base + "/todos");
@@ -208,6 +294,25 @@ async function run(browser, enabled) {
 
 (async () => {
     const browser = await chromium.launch({channel:"chrome",headless:true});
-    try { await run(browser,true); await run(browser,false); }
+    try {
+        await run(browser,true);
+        await run(browser,false);
+        const blocked = await browser.newContext();
+        try {
+            await blocked.addInitScript(() => Object.defineProperty(window, "localStorage", {
+                get() { throw new Error("Storage disabled by test"); },
+            }));
+            const page = await blocked.newPage();
+            const errors = [];
+            page.on("pageerror", error => errors.push(error.message));
+            await page.goto(base + "/login");
+            await page.getByRole("button", { name: "Switch to dark mode" }).click();
+            assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
+            await page.reload();
+            assert.equal(await page.locator("html").getAttribute("data-theme"), "light");
+            assert.deepEqual(errors, []);
+            console.log("PASS real browser: theme persistence, keyboard toggle, contrast and blocked-storage fallback.");
+        } finally { await blocked.close(); }
+    }
     finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode=1; });
