@@ -1,0 +1,357 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-08T16:00:40.857Z",
+  "title": "Design System: To-do",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15% 0.05039 251.93)",
+          "oklch(26.43% 0.05039 251.93)",
+          "oklch(37.86% 0.05039 251.93)",
+          "oklch(49.29% 0.05039 251.93)",
+          "oklch(60.71% 0.05039 251.93)",
+          "oklch(72.14% 0.05039 251.93)",
+          "oklch(83.57% 0.05039 251.93)",
+          "oklch(95% 0.05039 251.93)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted ink",
+        "tonalRamp": [
+          "oklch(15% 0.04018 252.52)",
+          "oklch(26.43% 0.04018 252.52)",
+          "oklch(37.86% 0.04018 252.52)",
+          "oklch(49.29% 0.04018 252.52)",
+          "oklch(60.71% 0.04018 252.52)",
+          "oklch(72.14% 0.04018 252.52)",
+          "oklch(83.57% 0.04018 252.52)",
+          "oklch(95% 0.04018 252.52)"
+        ]
+      },
+      "cover": {
+        "role": "primary",
+        "displayName": "Navy cover",
+        "tonalRamp": [
+          "oklch(15% 0.0839 252.37)",
+          "oklch(26.43% 0.0839 252.37)",
+          "oklch(37.86% 0.0839 252.37)",
+          "oklch(49.29% 0.0839 252.37)",
+          "oklch(60.71% 0.0839 252.37)",
+          "oklch(72.14% 0.0839 252.37)",
+          "oklch(83.57% 0.0839 252.37)",
+          "oklch(95% 0.0839 252.37)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Action blue",
+        "tonalRamp": [
+          "oklch(15% 0.18244 263.59)",
+          "oklch(26.43% 0.18244 263.59)",
+          "oklch(37.86% 0.18244 263.59)",
+          "oklch(49.29% 0.18244 263.59)",
+          "oklch(60.71% 0.18244 263.59)",
+          "oklch(72.14% 0.18244 263.59)",
+          "oklch(83.57% 0.18244 263.59)",
+          "oklch(95% 0.18244 263.59)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Deep action blue",
+        "tonalRamp": [
+          "oklch(15% 0.15489 263.32)",
+          "oklch(26.43% 0.15489 263.32)",
+          "oklch(37.86% 0.15489 263.32)",
+          "oklch(49.29% 0.15489 263.32)",
+          "oklch(60.71% 0.15489 263.32)",
+          "oklch(72.14% 0.15489 263.32)",
+          "oklch(83.57% 0.15489 263.32)",
+          "oklch(95% 0.15489 263.32)"
+        ]
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Cool ground",
+        "tonalRamp": [
+          "oklch(15% 0.00686 247.9)",
+          "oklch(26.43% 0.00686 247.9)",
+          "oklch(37.86% 0.00686 247.9)",
+          "oklch(49.29% 0.00686 247.9)",
+          "oklch(60.71% 0.00686 247.9)",
+          "oklch(72.14% 0.00686 247.9)",
+          "oklch(83.57% 0.00686 247.9)",
+          "oklch(95% 0.00686 247.9)"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "White sheet",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26.43% 0 0)",
+          "oklch(37.86% 0 0)",
+          "oklch(49.29% 0 0)",
+          "oklch(60.71% 0 0)",
+          "oklch(72.14% 0 0)",
+          "oklch(83.57% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Rule line",
+        "tonalRamp": [
+          "oklch(15% 0.01677 250.85)",
+          "oklch(26.43% 0.01677 250.85)",
+          "oklch(37.86% 0.01677 250.85)",
+          "oklch(49.29% 0.01677 250.85)",
+          "oklch(60.71% 0.01677 250.85)",
+          "oklch(72.14% 0.01677 250.85)",
+          "oklch(83.57% 0.01677 250.85)",
+          "oklch(95% 0.01677 250.85)"
+        ]
+      },
+      "danger": {
+        "role": "feedback",
+        "displayName": "Danger ink",
+        "tonalRamp": [
+          "oklch(15% 0.15624 18.5)",
+          "oklch(26.43% 0.15624 18.5)",
+          "oklch(37.86% 0.15624 18.5)",
+          "oklch(49.29% 0.15624 18.5)",
+          "oklch(60.71% 0.15624 18.5)",
+          "oklch(72.14% 0.15624 18.5)",
+          "oklch(83.57% 0.15624 18.5)",
+          "oklch(95% 0.15624 18.5)"
+        ]
+      },
+      "danger-surface": {
+        "role": "feedback",
+        "displayName": "Danger surface",
+        "tonalRamp": [
+          "oklch(15% 0.0164 8.16)",
+          "oklch(26.43% 0.0164 8.16)",
+          "oklch(37.86% 0.0164 8.16)",
+          "oklch(49.29% 0.0164 8.16)",
+          "oklch(60.71% 0.0164 8.16)",
+          "oklch(72.14% 0.0164 8.16)",
+          "oklch(83.57% 0.0164 8.16)",
+          "oklch(95% 0.0164 8.16)"
+        ]
+      },
+      "success": {
+        "role": "feedback",
+        "displayName": "Success ink",
+        "tonalRamp": [
+          "oklch(15% 0.07862 160.55)",
+          "oklch(26.43% 0.07862 160.55)",
+          "oklch(37.86% 0.07862 160.55)",
+          "oklch(49.29% 0.07862 160.55)",
+          "oklch(60.71% 0.07862 160.55)",
+          "oklch(72.14% 0.07862 160.55)",
+          "oklch(83.57% 0.07862 160.55)",
+          "oklch(95% 0.07862 160.55)"
+        ]
+      },
+      "success-surface": {
+        "role": "feedback",
+        "displayName": "Success surface",
+        "tonalRamp": [
+          "oklch(15% 0.01402 155.59)",
+          "oklch(26.43% 0.01402 155.59)",
+          "oklch(37.86% 0.01402 155.59)",
+          "oklch(49.29% 0.01402 155.59)",
+          "oklch(60.71% 0.01402 155.59)",
+          "oklch(72.14% 0.01402 155.59)",
+          "oklch(83.57% 0.01402 155.59)",
+          "oklch(95% 0.01402 155.59)"
+        ]
+      },
+      "input-border": {
+        "role": "neutral",
+        "displayName": "Input border",
+        "tonalRamp": [
+          "oklch(15% 0.03675 253.79)",
+          "oklch(26.43% 0.03675 253.79)",
+          "oklch(37.86% 0.03675 253.79)",
+          "oklch(49.29% 0.03675 253.79)",
+          "oklch(60.71% 0.03675 253.79)",
+          "oklch(72.14% 0.03675 253.79)",
+          "oklch(83.57% 0.03675 253.79)",
+          "oklch(95% 0.03675 253.79)"
+        ]
+      },
+      "outline-border": {
+        "role": "neutral",
+        "displayName": "Outline border",
+        "tonalRamp": [
+          "oklch(15% 0.04742 262.5)",
+          "oklch(26.43% 0.04742 262.5)",
+          "oklch(37.86% 0.04742 262.5)",
+          "oklch(49.29% 0.04742 262.5)",
+          "oklch(60.71% 0.04742 262.5)",
+          "oklch(72.14% 0.04742 262.5)",
+          "oklch(83.57% 0.04742 262.5)",
+          "oklch(95% 0.04742 262.5)"
+        ]
+      },
+      "action-hover": {
+        "role": "neutral",
+        "displayName": "Action hover",
+        "tonalRamp": [
+          "oklch(15% 0.01733 264.49)",
+          "oklch(26.43% 0.01733 264.49)",
+          "oklch(37.86% 0.01733 264.49)",
+          "oklch(49.29% 0.01733 264.49)",
+          "oklch(60.71% 0.01733 264.49)",
+          "oklch(72.14% 0.01733 264.49)",
+          "oklch(83.57% 0.01733 264.49)",
+          "oklch(95% 0.01733 264.49)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline-large": {
+        "displayName": "Large headline",
+        "purpose": "Task-list heading; authentication cover uses weight 600."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Authentication and recovery headings; recovery line-height is 1.25."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "edit-reveal",
+        "value": "180ms cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Inline edit form clip-path expands from inset(0 0 12%) to inset(0); disabled by prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack-auth",
+        "value": "700px"
+      },
+      {
+        "name": "stack-actions",
+        "value": "440px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary form and save actions.",
+      "html": "<button class=\"ds-button ds-button-primary\">Save changes</button>",
+      "css": ".ds-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; gap:8px; padding:10px 17px; border:1px solid transparent; border-radius:8px; font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:.875rem; font-weight:600; line-height:1.5; cursor:pointer; text-decoration:none; white-space:nowrap; } .ds-button:focus-visible { outline:3px solid var(--accent,#2858c8); outline-offset:4px; } .ds-button:disabled { opacity:.6; cursor:wait; } .ds-button-primary { background:var(--accent,#2858c8);color:var(--sheet,#ffffff); } .ds-button-primary:hover { background:var(--accent-hover,#1c449f); } .ds-button-primary:active { background:var(--cover,#153c65); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary authentication action.",
+      "html": "<button class=\"ds-button ds-button-outline\">Create account</button>",
+      "css": ".ds-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; gap:8px; padding:10px 17px; border:1px solid transparent; border-radius:8px; font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:.875rem; font-weight:600; line-height:1.5; cursor:pointer; text-decoration:none; white-space:nowrap; } .ds-button:focus-visible { outline:3px solid var(--accent,#2858c8); outline-offset:4px; } .ds-button:disabled { opacity:.6; cursor:wait; } .ds-button-outline { background:transparent;color:var(--accent,#2858c8);border-color:#b7c8e7; } .ds-button-outline:hover { background:#edf3ff; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Edit, cancel and logout actions.",
+      "html": "<button class=\"ds-button ds-button-quiet\">Cancel</button>",
+      "css": ".ds-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; gap:8px; padding:10px 17px; border:1px solid transparent; border-radius:8px; font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:.875rem; font-weight:600; line-height:1.5; cursor:pointer; text-decoration:none; white-space:nowrap; } .ds-button:focus-visible { outline:3px solid var(--accent,#2858c8); outline-offset:4px; } .ds-button:disabled { opacity:.6; cursor:wait; } .ds-button-quiet { background:transparent;color:var(--muted,#53657a); } .ds-button-quiet:hover { background:#e8eef5;color:var(--ink,#172c43); }"
+    },
+    {
+      "name": "Delete Button",
+      "kind": "button",
+      "refersTo": "button-delete",
+      "description": "Task deletion entry action.",
+      "html": "<button class=\"ds-button ds-button-delete\">Delete</button>",
+      "css": ".ds-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; gap:8px; padding:10px 17px; border:1px solid transparent; border-radius:8px; font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:.875rem; font-weight:600; line-height:1.5; cursor:pointer; text-decoration:none; white-space:nowrap; } .ds-button:focus-visible { outline:3px solid var(--accent,#2858c8); outline-offset:4px; } .ds-button:disabled { opacity:.6; cursor:wait; } .ds-button-delete { background:transparent;color:var(--danger,#a12838); } .ds-button-delete:hover { background:var(--danger-surface,#fff0f2); }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Explicit deletion confirmation.",
+      "html": "<button class=\"ds-button ds-button-danger\">Delete to-do</button>",
+      "css": ".ds-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; gap:8px; padding:10px 17px; border:1px solid transparent; border-radius:8px; font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:.875rem; font-weight:600; line-height:1.5; cursor:pointer; text-decoration:none; white-space:nowrap; } .ds-button:focus-visible { outline:3px solid var(--accent,#2858c8); outline-offset:4px; } .ds-button:disabled { opacity:.6; cursor:wait; } .ds-button-danger { background:var(--danger,#a12838);color:var(--sheet,#ffffff); } .ds-button-danger:hover { background:#7f1e2b; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Labeled task or authentication input with field guidance.",
+      "html": "<label class=\"ds-label\" for=\"ds-title\">New to-do title</label><input class=\"ds-input\" id=\"ds-title\" placeholder=\"e.g. Finish the database lab\"><p class=\"ds-help\">Up to 200 characters. Give each to-do its own title.</p>",
+      "css": ".ds-label { display:block; margin-bottom:7px; font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:.875rem; font-weight:600; color:var(--ink,#172c43); } .ds-input { width:100%; min-width:0; min-height:48px; padding:11px 14px; border:1px solid #8798ad; border-radius:8px; background:var(--sheet,#ffffff); color:var(--ink,#172c43); font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:1rem; line-height:1.5; caret-color:var(--accent,#2858c8); } .ds-input::placeholder { color:var(--muted,#53657a);opacity:1; } .ds-input:hover {border-color:var(--ink,#172c43);} .ds-input:focus {border-color:var(--accent,#2858c8);} .ds-input:focus-visible {outline:3px solid var(--accent,#2858c8);outline-offset:4px;} .ds-input[aria-invalid=\"true\"] {border-color:var(--danger,#a12838);} .ds-help {margin:8px 0 0;color:var(--muted,#53657a);font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif;font-size:.8125rem;line-height:1.5;}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "description": "White header with navy brand and account action.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Sample navigation\"><a class=\"ds-brand\" href=\"#ds-list\"><svg viewBox=\"0 0 24 24\" width=\"26\" height=\"26\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"5\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"m7.5 12 3 3 6-6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg><span>To-do</span></a><button class=\"ds-button ds-button-quiet\">Log out</button></nav>",
+      "css": ".ds-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; gap:8px; padding:10px 17px; border:1px solid transparent; border-radius:8px; font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:.875rem; font-weight:600; line-height:1.5; cursor:pointer; text-decoration:none; white-space:nowrap; } .ds-button:focus-visible { outline:3px solid var(--accent,#2858c8); outline-offset:4px; } .ds-button:disabled { opacity:.6; cursor:wait; } .ds-nav { display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 32px;border-bottom:1px solid var(--line,#d8e1eb);background:var(--sheet,#ffffff); } .ds-brand {display:inline-flex;align-items:center;gap:10px;color:var(--cover,#153c65);font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:-.03em;text-decoration:none;} .ds-brand:hover {color:var(--accent-hover,#1c449f);} .ds-brand:focus-visible {outline:3px solid var(--accent,#2858c8);outline-offset:4px;} .ds-button-quiet {background:transparent;color:var(--muted,#53657a);} .ds-button-quiet:hover {background:#e8eef5;color:var(--ink,#172c43);} @media(max-width:440px){.ds-nav {padding:12px 16px;gap:12px;}}"
+    },
+    {
+      "name": "Working Sheet",
+      "kind": "card",
+      "refersTo": "working-sheet",
+      "description": "Bordered, flat container with ruled section division.",
+      "html": "<section class=\"ds-sheet\"><div class=\"ds-sheet-add\"><h2>What needs to be done?</h2></div><div class=\"ds-sheet-list\"><h2>Your list</h2><p>Your list is empty</p></div></section>",
+      "css": ".ds-sheet {background:var(--sheet,#ffffff);border:1px solid var(--line,#d8e1eb);border-radius:var(--radius,14px);font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif;color:var(--ink,#172c43);} .ds-sheet-add {padding:30px 32px 26px;} .ds-sheet-add h2 {margin:0;font-size:1.125rem;font-weight:600;} .ds-sheet-list {border-top:1px solid var(--line,#d8e1eb);padding:24px 32px;} .ds-sheet-list h2 {margin:0 0 16px;color:var(--muted,#53657a);font-size:.875rem;font-weight:600;} .ds-sheet-list p {margin:0;font-size:1.125rem;font-weight:600;} @media(max-width:700px){.ds-sheet-add {padding:24px;} .ds-sheet-list {padding:20px 24px;}} @media(max-width:440px){.ds-sheet-add {padding:24px 20px;} .ds-sheet-list {padding-inline:20px;}}"
+    },
+    {
+      "name": "Task Row",
+      "kind": "custom",
+      "description": "Ruled task row with status control, readable state and direct actions.",
+      "html": "<div class=\"ds-task\"><button class=\"ds-status\" aria-label=\"Mark done\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg></button><div class=\"ds-content\"><span class=\"ds-title\">Review SQL joins</span><span class=\"ds-state\">Open</span></div><div class=\"ds-actions\"><button class=\"ds-button ds-quiet\">Edit</button><button class=\"ds-button ds-delete\">Delete</button></div></div>",
+      "css": ".ds-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; gap:8px; padding:10px 17px; border:1px solid transparent; border-radius:8px; font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif; font-size:.875rem; font-weight:600; line-height:1.5; cursor:pointer; text-decoration:none; white-space:nowrap; } .ds-button:focus-visible { outline:3px solid var(--accent,#2858c8); outline-offset:4px; } .ds-button:disabled { opacity:.6; cursor:wait; } .ds-task {display:flex;align-items:center;gap:12px;padding:18px 0;border-top:1px solid var(--line,#d8e1eb);font-family:\"Segoe UI\", system-ui, -apple-system, sans-serif;color:var(--ink,#172c43);} .ds-status {display:flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:#647a93;cursor:pointer;} .ds-status:hover {color:var(--accent,#2858c8);background:#edf3ff;} .ds-status:focus-visible {outline:3px solid var(--accent,#2858c8);outline-offset:4px;} .ds-content {flex:1;min-width:0;} .ds-title {display:block;overflow-wrap:anywhere;font-size:1rem;line-height:1.5;} .ds-state {display:block;margin-top:3px;font-size:.75rem;line-height:1.5;color:var(--muted,#53657a);} .ds-actions {display:flex;align-items:center;gap:12px;flex-shrink:0;} .ds-actions .ds-button {padding-inline:12px;} .ds-quiet {color:var(--muted,#53657a);background:transparent;} .ds-quiet:hover {color:var(--ink,#172c43);background:#e8eef5;} .ds-delete {color:var(--danger,#a12838);background:transparent;} .ds-delete:hover {background:var(--danger-surface,#fff0f2);} @media(max-width:440px){.ds-task {flex-wrap:wrap;gap:8px;} .ds-content {flex-basis:calc(100% - 52px);} .ds-actions {padding-left:52px;width:100%;gap:16px;} .ds-actions .ds-button {padding-inline:10px;}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Campus Study Folio",
+    "overview": "The Campus Study Folio gives a private task list the feel of a working sheet: cool white surfaces, navy cover material and familiar controls. Its Operate mode uses system UI lettering, direct labels and enough room to act comfortably.\n\nThe system stays flat and practical. Ruled rows organize tasks; blue identifies primary actions; completion and errors have both words and color. Authentication pairs a blue introduction with a white form, while editing and recovery remain within the sheet.",
+    "keyCharacteristics": [
+      "Cool white working sheets against a pale blue-gray ground.",
+      "System UI typography and restrained rounded rectangles.",
+      "Ruled task rows with explicit Open and Done labels.",
+      "Inline editing, clear recovery and visible keyboard focus."
+    ],
+    "rules": [
+      {
+        "name": "The Working Sheet Rule",
+        "body": "Keep related task controls within one ruled white sheet.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Use borders and color separation for depth; the shipped system has no shadows.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Visible State Rule",
+        "body": "Pair status color with a readable state label; done titles also receive a strike-through.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do preserve visible focus, field labels and inline validation.",
+      "Do let long task titles wrap and keep task actions reachable on narrow screens.",
+      "Do retain the minimum control sizes and reduced-motion behavior."
+    ],
+    "donts": [
+      "Don't replace the approved working sheet with dashboard cards.",
+      "Don't add imagery or decorative display typography to this Operate interface.",
+      "Don't communicate completion or validation through color alone."
+    ]
+  }
+}
+

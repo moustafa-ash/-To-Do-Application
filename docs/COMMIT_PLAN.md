@@ -1,67 +1,54 @@
 # Commit plan
 
-Updated on 8 October 2026 for local integration changes on base revision `5c05140`.
+Updated 8 October 2026. The previously published changes end at `6ffea51`. The new completion work is local and uncommitted; this request did not authorize a new commit or push.
 
-## Recorded checkpoints
+## Recorded history
 
-| Commit | Scope |
+| Commit | Contributor / scope |
 | --- | --- |
-| `e5b4dad` | Initial repository and `.gitignore` |
-| [49c9471](https://github.com/moustafa-ash/-To-Do-Application/commit/49c9471903c9fc7d155dfd4461056e60564bd1e4) | Flask/session bootstrap, registration validation, database helper and DDL, placeholders and initial docs |
-| `15e1402` | Documentation update and schema spacing |
-| [24c9b09](https://github.com/moustafa-ash/-To-Do-Application/commit/24c9b09b5e14b0c67b953a901d7c85a3e9e08f73) | Registration persistence, login/logout, session rotation, protected home, CSRF enforcement and authentication HTML hooks |
-| `5c05140` | To-do list/add/edit/done/delete routes, template and JavaScript validation/confirmation |
+| `e5b4dad` | Moustafa: initial repository and ignore rules |
+| `49c9471` | Moustafa: bootstrap, registration validation, helper/schema and docs |
+| `15e1402` | Moustafa: documentation update |
+| `24c9b09` | Moustafa: authentication persistence, login/logout, sessions and CSRF |
+| `5c05140` | Ibrahim (`i949`): personal task CRUD, HTML and browser behavior |
+| `e20288f` | Ibrahim (`i949`): oversized task ID bounds |
+| `6ffea51` | Moustafa: authentication browser validation, task CSRF fields and documentation |
 
-The local HEAD and cached `origin/main` both point to `5c05140` at audit time. No remote fetch was performed during this documentation-only audit. Earlier pushes of `49c9471` and `24c9b09` were verified against GitHub in this session. Repository-local Git author email uses the existing GitHub noreply address; real `.env` and `.venv` are excluded.
+## Completion work ready for review
 
-## Local integration work ready for review
+The current diff restores missing route registration/home navigation, adds the approved shared responsive UI and friendly errors, aligns Unicode title limits, prevents duplicate titles per user, handles unchanged saves, and provides no-JS deletion confirmation. It also contains a one-time existing-database migration, repeatable tests, four real-browser screenshots, README answers/setup and refreshed handoff documentation.
 
-The four requested tasks are implemented locally: to-do blueprint registration, all to-do CSRF fields, authentication/list redirects plus list logout, and browser authentication validation. Home now redirects to the list. The existing teammate formatting edit in `todos.py` was preserved.
+Suggested commit message: `Complete responsive task app and verify lab delivery`.
 
-Suggested implementation message: `Connect to-do routes and add authentication browser validation`.
+Review `app.py`, `db.py`, `todos.py`, schema/migration, templates/CSS/JS, tests, screenshots, README/docs and the product/design context. These changes form one reviewed completion checkpoint. Do not invent contributor commits or split the same generated work between identities merely to change attribution; both members already have genuine published contributions.
 
-Review `app.py`, `auth.py`, `templates/todos.html`, `static/js/auth.js`, `tests/auth_validation.test.js`, and all three docs. The existing `todos.py` formatting change is separate; do not stage it automatically with this work. No commit or push was performed for this request.
-
-Checks passed: live MySQL two-user authentication/CRUD/isolation/CSRF and server validation through Flask's test client, actual browser auth validation, Node regression boundaries and JS syntax. Temporary test data was removed. These results do not complete styling, ID-error handling or final delivery evidence.
-
-## Next small commits
-
-| Owner | Suggested message and scope |
-| --- | --- |
-| Ibrahim | `Handle invalid to-do IDs without raw errors`: bound conversion inputs, friendly errors and malformed/oversized/ownership cases. Verify to-do Unicode/browser behavior too. |
-| Both, one editor per shared file | `Add shared responsive layout`: base/CSS, clear feedback/navigation/done states on laptop and about 360 px. |
-| Both | `Document verified lab delivery`: full browser JavaScript on/off and confirmation journeys, fresh setup/disposable reset, foreign-key rejection, four screenshots and explanations. |
-
-Do not recreate already connected CRUD/authentication. Safe name/email retention is an optional small improvement, never passwords. Bonus features can wait.
-
-## Commit/pull/push routine
-
-1. Save changes, coordinate shared-file editing, and review Git status before starting or pulling.
-2. Pull `main` only after preserving local edits:
+## Before committing
 
 ```powershell
 git status --short
+git diff --check
 git diff
-git pull --ff-only origin main
-```
-
-If a pull is blocked by local edits, commit the intended work or stash the specific changed files, then pull and inspect the saved diff before restoring. Restore can cause conflicts. Do not discard edits or force-push to bypass them.
-
-3. Run checks appropriate to the changed behavior and keep documentation evidence accurate.
-4. Stage only the actual completed change, then review:
-
-```powershell
-git diff --cached --stat
-git diff --cached --check
-git diff --cached
+.\.venv\Scripts\python.exe -X utf8 -B tests/integration.py
+node tests/auth_validation.test.js
+node tests/todos_validation.test.js
 git check-ignore .env .venv
 git ls-files -- .env
 ```
 
-The ignored-path check should list `.env` and `.venv`; the tracked `.env` check should be empty. Only fake values belong in `.env.example`. Each member must commit their own understood contributions.
+The tracked `.env` result must be empty. Review screenshot content and do not include local chooser/review caches. Live tests use disposable databases. Real-browser checks and their optional dependency setup are documented in README.
 
-5. Commit with a message matching final scope. Refresh remote before pushing; if histories diverge, resolve together without force-pushing. After push, verify GitHub contains the resulting commit.
+When commit/push is authorized, stage only the reviewed completion files, inspect `git diff --cached --check` and `git diff --cached`, then commit. Refresh the remote before pushing; preserve local work and resolve any divergence normally. Never force-push over a teammate's history.
 
-## Current publication status
+## Pulling safely
 
-This request implements the four selected tasks and updates README/handoff/plan. The changes are local and uncommitted; publication requires a separate commit/push request. Credentials and environment files remain excluded. Review teammate changes separately before staging.
+With a clean working tree:
+
+```powershell
+git pull --ff-only origin main
+```
+
+If local edits block pulling, commit intended work or stash the specific files first. Inspect the saved diff before restoring it; restoring can cause conflicts. Do not discard edits to bypass the error. After pulling, check both blueprint registrations and run integration tests so a merge cannot silently leave the list disconnected.
+
+## Delivery gates
+
+Both members review and explain the final code/README answers; publish the validated completion commit after authorization; verify GitHub has all four screenshots and DDL; then hand in the repository through the course's process. No GitHub publication or course submission occurred in this completion request.

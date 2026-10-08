@@ -1,86 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My to-dos</title>
-    <script src="{{ url_for('static', filename='js/todos.js') }}" defer></script>
-</head>
-<body>
-    <header>
-        <h1>My to-dos</h1>
-        {% if name %}<p>Signed in as {{ name }}</p>{% endif %}
-        <form method="post" action="{{ url_for('auth.logout') }}">
+{% extends "base.html" %}
+{% block title %}My to-dos{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/todos.js') }}" defer></script>{% endblock %}
+{% block page_class %}todos-page{% endblock %}
+{% block content %}
+<header class="list-heading"><h1>My to-dos</h1><p>A clear space for what you want to get done.</p></header>
+<div class="working-sheet">
+    <section class="add-section" aria-labelledby="add-heading">
+        <h2 id="add-heading">What needs to be done?</h2>
+        <form method="post" action="{{ url_for('todos.add') }}" data-title-form>
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button type="submit">Log out</button>
+            <label class="visually-hidden" for="new-title">New to-do title</label>
+            <div class="add-row"><input id="new-title" name="title" type="text" value="{{ title }}" placeholder="e.g. Finish the database lab" aria-describedby="title-help new-title-error" data-title-input><button class="button button-primary" type="submit">Add to-do</button></div>
+            <p id="new-title-error" class="inline-error" data-title-error role="alert"></p>
+            <p id="title-help" class="field-help">Up to 200 characters. Give each to-do its own title.</p>
         </form>
-    </header>
-
-    <main>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul aria-live="polite" aria-atomic="true">
-                    {% for category, message in messages %}
-                        <li class="flash {{ category }}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
-
-        <section aria-labelledby="add-heading">
-            <h2 id="add-heading">Add a to-do</h2>
-            <form method="post" action="{{ url_for('todos.add') }}" data-title-form>
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <label for="new-title">Title</label>
-                <input id="new-title" name="title" type="text" maxlength="201"
-                       value="{{ title }}" data-title-input>
-                <button type="submit">Add</button>
-                <p data-title-error role="alert"></p>
-            </form>
-        </section>
-
-        <section aria-labelledby="list-heading">
-            <h2 id="list-heading">Your list</h2>
-            {% if not todos %}
-                <p class="empty-state">Your list is empty. Add a to-do to get started.</p>
-            {% else %}
-                <ul class="todo-list">
-                    {% for todo in todos %}
-                        <li class="todo-item{% if todo.is_done %} is-done{% endif %}">
-                            {% if edit_id == todo.todo_id %}
-                                <form method="post" action="{{ url_for('todos.edit', todo_id=todo.todo_id) }}" data-title-form>
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <label for="edit-title-{{ todo.todo_id }}">Edit title</label>
-                                    <input id="edit-title-{{ todo.todo_id }}" name="title" type="text"
-                                           maxlength="201" value="{{ edit_title }}" data-title-input>
-                                    <button type="submit">Save</button>
-                                    <a href="{{ url_for('todos.index') }}">Cancel</a>
-                                    <p data-title-error role="alert"></p>
-                                </form>
-                            {% else %}
-                                <span class="todo-title">{{ todo.title }}</span>
-                                {% if todo.is_done %}<span class="done-label">Done</span>{% endif %}
-                                <form method="post" action="{{ url_for('todos.set_done', todo_id=todo.todo_id) }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    {% if todo.is_done %}
-                                        <input type="hidden" name="status" value="open">
-                                        <button type="submit">Mark open</button>
-                                    {% else %}
-                                        <input type="hidden" name="status" value="done">
-                                        <button type="submit">Mark done</button>
-                                    {% endif %}
-                                </form>
-                                <a href="{{ url_for('todos.index', edit=todo.todo_id) }}" data-edit-link="{{ todo.todo_id }}">Edit</a>
-                                <form method="post" action="{{ url_for('todos.delete', todo_id=todo.todo_id) }}" data-delete-form>
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <button type="submit">Delete</button>
-                                </form>
-                            {% endif %}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </section>
-    </main>
-</body>
-</html>
+    </section>
+    <section class="list-section" aria-labelledby="list-heading">
+        <h2 id="list-heading">Your list</h2>
+        {% if not todos %}
+            <div class="empty-state"><h3>Your list is empty</h3><p>Add a to-do above to get started.</p></div>
+        {% else %}
+            <ul class="todo-list">
+                {% for todo in todos %}
+                    <li class="todo-item{% if todo.is_done %} is-done{% endif %}">
+                        {% if delete_id == todo.todo_id %}
+                            <div class="delete-confirmation">
+                                <h3>Delete this to-do?</h3><p class="todo-title">{{ todo.title }}</p><p class="field-help">This cannot be undone.</p>
+                                <div class="edit-actions"><form method="post" action="{{ url_for('todos.delete', todo_id=todo.todo_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-danger" type="submit">Delete to-do</button></form><a class="button button-quiet" href="{{ url_for('todos.index') }}">Cancel</a></div>
+                            </div>
+                        {% elif edit_id == todo.todo_id %}
+                            <form class="edit-form" method="post" action="{{ url_for('todos.edit', todo_id=todo.todo_id) }}" data-title-form>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <label for="edit-title-{{ todo.todo_id }}">Edit title</label>
+                                <input id="edit-title-{{ todo.todo_id }}" name="title" type="text" value="{{ edit_title }}" aria-describedby="edit-error-{{ todo.todo_id }}" data-title-input autofocus>
+                                <p id="edit-error-{{ todo.todo_id }}" class="inline-error" data-title-error role="alert"></p>
+                                <div class="edit-actions"><button class="button button-primary" type="submit">Save changes</button><a class="button button-quiet" href="{{ url_for('todos.index') }}">Cancel</a></div>
+                            </form>
+                        {% else %}
+                            <form class="status-form" method="post" action="{{ url_for('todos.set_done', todo_id=todo.todo_id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="status" value="{{ 'open' if todo.is_done else 'done' }}">
+                                <button class="status-button" type="submit" aria-label="{{ 'Mark open' if todo.is_done else 'Mark done' }}" title="{{ 'Mark open' if todo.is_done else 'Mark done' }}">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="6" stroke="currentColor" stroke-width="1.6"/>{% if todo.is_done %}<path d="m7.5 12 3 3 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>{% endif %}</svg>
+                                </button>
+                            </form>
+                            <div class="todo-content"><span class="todo-title">{{ todo.title }}</span><span class="task-state">{{ 'Done' if todo.is_done else 'Open' }}</span></div>
+                            <div class="todo-actions">
+                                <a class="button button-quiet" href="{{ url_for('todos.index', edit=todo.todo_id) }}" data-edit-link="{{ todo.todo_id }}">Edit</a>
+                                <form class="delete-with-js" method="post" action="{{ url_for('todos.delete', todo_id=todo.todo_id) }}" data-delete-form><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-delete" type="submit">Delete</button></form>
+                                <noscript><a class="button button-delete" href="{{ url_for('todos.index', delete=todo.todo_id) }}">Delete</a></noscript>
+                            </div>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

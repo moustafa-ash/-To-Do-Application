@@ -2,6 +2,7 @@ import os
 
 import pymysql
 from dotenv import load_dotenv
+from pymysql.constants import CLIENT
 
 load_dotenv()
 
@@ -14,4 +15,7 @@ def get_connection():
         password=os.environ["DB_PASSWORD"],
         database=os.environ["DB_NAME"],
         cursorclass=pymysql.cursors.DictCursor,
+        charset="utf8mb4",
+        # Matched rows count as success even when the submitted value is unchanged.
+        client_flag=CLIENT.FOUND_ROWS,
     )

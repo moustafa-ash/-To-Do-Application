@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 event.preventDefault();
                 error.textContent = "Title is required";
                 input.focus();
-            } else if (value.length > 200) {
+            } else if ([...value].length > 200) {
                 event.preventDefault();
                 error.textContent = "Title is too long";
                 input.focus();

@@ -1,5 +1,14 @@
-from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 import pymysql
+from flask import (
+    Blueprint,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from db import get_connection
 
@@ -46,14 +55,23 @@ def _get_user_todos(user_id):
         connection.close()
 
 
-def _render_list(user_id, *, title="", edit_id=None, edit_title="", status=200):
+def _render_list(
+    user_id, *, title="", edit_id=None, edit_title=None, delete_id=None, status=200
+):
     try:
         user_todos = _get_user_todos(user_id)
-        if edit_id is not None and not edit_title:
-            edit_title = next(
-                (todo["title"] for todo in user_todos if todo["todo_id"] == edit_id),
-                "",
+        if delete_id is not None and not any(
+            todo["todo_id"] == delete_id for todo in user_todos
+        ):
+            abort(404)
+        if edit_id is not None:
+            edited = next(
+                (todo for todo in user_todos if todo["todo_id"] == edit_id), None
             )
+            if edited is None:
+                abort(404)
+            if edit_title is None:
+                edit_title = edited["title"]
     except pymysql.MySQLError:
         user_todos = []
         flash("Your to-do list could not be loaded. Please try again.", "error")
@@ -64,6 +82,7 @@ def _render_list(user_id, *, title="", edit_id=None, edit_title="", status=200):
         title=title,
         edit_id=edit_id,
         edit_title=edit_title,
+        delete_id=delete_id,
         name=session.get("name", ""),
     ), status
 
@@ -82,7 +101,9 @@ def index():
         return response
     raw_edit_id = request.args.get("edit")
     edit_id = _todo_id(raw_edit_id) if raw_edit_id is not None else None
-    return _render_list(user_id, edit_id=edit_id)
+    raw_delete_id = request.args.get("delete")
+    delete_id = _todo_id(raw_delete_id) if raw_delete_id is not None else None
+    return _render_list(user_id, edit_id=edit_id, delete_id=delete_id)
 
 
 @todos.post("/todos")
@@ -108,9 +129,12 @@ def add():
                 (user_id, title),
             )
         connection.commit()
-    except pymysql.MySQLError:
+    except pymysql.MySQLError as error:
         if connection:
             connection.rollback()
+        if error.args[0] == 1062:
+            flash("A to-do with this title already exists", "error")
+            return _render_list(user_id, title=title, status=400)
         flash("Your to-do could not be added. Please try again.", "error")
         return redirect(url_for("todos.index"))
     finally:
@@ -130,7 +154,12 @@ def edit(todo_id):
     title = request.form.get("title", "").strip()
     if not title:
         flash("Title is required", "error")
-        return _render_list(user_id, edit_id=todo_id, edit_title=request.form.get("title", ""), status=400)
+        return _render_list(
+            user_id,
+            edit_id=todo_id,
+            edit_title=request.form.get("title", ""),
+            status=400,
+        )
     if len(title) > 200:
         flash("Title is too long", "error")
         return _render_list(user_id, edit_id=todo_id, edit_title=title, status=400)
@@ -145,16 +174,22 @@ def edit(todo_id):
             )
             changed = cursor.rowcount
         connection.commit()
-    except pymysql.MySQLError:
+    except pymysql.MySQLError as error:
         if connection:
             connection.rollback()
+        if error.args[0] == 1062:
+            flash("A to-do with this title already exists", "error")
+            return _render_list(user_id, edit_id=todo_id, edit_title=title, status=400)
         flash("Your to-do could not be updated. Please try again.", "error")
         return redirect(url_for("todos.index"))
     finally:
         if connection:
             connection.close()
 
-    flash("To-do updated." if changed else "To-do not found.", "success" if changed else "error")
+    flash(
+        "To-do updated." if changed else "To-do not found.",
+        "success" if changed else "error",
+    )
     return redirect(url_for("todos.index"))
 
 
@@ -189,7 +224,10 @@ def set_done(todo_id):
         if connection:
             connection.close()
 
-    flash("To-do status updated." if changed else "To-do not found.", "success" if changed else "error")
+    flash(
+        "To-do status updated." if changed else "To-do not found.",
+        "success" if changed else "error",
+    )
     return redirect(url_for("todos.index"))
 
 
@@ -219,5 +257,8 @@ def delete(todo_id):
         if connection:
             connection.close()
 
-    flash("To-do deleted." if changed else "To-do not found.", "success" if changed else "error")
+    flash(
+        "To-do deleted." if changed else "To-do not found.",
+        "success" if changed else "error",
+    )
     return redirect(url_for("todos.index"))

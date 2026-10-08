@@ -1,5 +1,5 @@
 DROP DATABASE IF EXISTS registration;
-CREATE DATABASE registration;
+CREATE DATABASE registration CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE registration;
 
 CREATE TABLE users (
@@ -19,5 +19,6 @@ title VARCHAR(200) NOT NULL,
 is_done TINYINT(1) NOT NULL DEFAULT 0,
 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 PRIMARY KEY (todo_id),
+CONSTRAINT uq_todos_user_title UNIQUE (user_id, title),
 FOREIGN KEY (user_id) REFERENCES users(user_id)
 );

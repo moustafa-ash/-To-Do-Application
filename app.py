@@ -3,10 +3,11 @@ import secrets
 
 from cachelib import SimpleCache
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, session
+from flask import Flask, redirect, render_template, request, session, url_for
 from flask_session import Session
 
 from auth import auth, login_required
+from todos import todos
 
 load_dotenv()
 
@@ -22,6 +23,7 @@ app.config.update(
 
 Session(app)
 app.register_blueprint(auth)
+app.register_blueprint(todos)
 
 
 @app.context_processor
@@ -52,4 +54,34 @@ def check_csrf_token():
 @app.get("/")
 @login_required
 def home():
-    return "To-Do application is running"
+    return redirect(url_for("todos.index"))
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return render_template(
+        "error.html",
+        code=404,
+        heading="This page or to-do isn't available",
+        message="It may have been deleted, or the link may be incorrect.",
+    ), 404
+
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return render_template(
+        "error.html",
+        code=405,
+        heading="Please use the form on the page",
+        message="Reopen the page and use its buttons to make this change.",
+    ), 405
+
+
+@app.errorhandler(500)
+def server_error(error):
+    return render_template(
+        "error.html",
+        code=500,
+        heading="Something went wrong",
+        message="Please reopen the page and try again in a moment.",
+    ), 500

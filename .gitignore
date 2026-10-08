@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local Impeccable chooser and visual-review caches
+.impeccable/questions/
+.impeccable/review/
+.impeccable/mocks/
