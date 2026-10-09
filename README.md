@@ -240,7 +240,13 @@ The app is configured for a free Render web service and a free Aiven MySQL datab
 2. In the service's **Overview** page, note the hostname, port and administrator credentials. Download the service's CA certificate.
 3. In DBeaver, create a MySQL connection to that host and port. Set SSL to verify the server identity and choose the downloaded CA file ([Aiven TLS details](https://aiven.io/docs/platform/concepts/tls-ssl-certificates)). Connect as the administrator.
 4. Before running any SQL, verify that DBeaver is connected to the new Aiven service and that this is a fresh, empty database. Open `database/schema.sql` from this repository and execute it once. It drops and recreates `registration`, so never run it on a database that has data you want to keep.
-5. In Aiven's **Connect → Users** page, create a separate application user with only `SELECT`, `INSERT`, `UPDATE` and `DELETE` privileges for the app database ([Aiven user and grant settings](https://aiven.io/docs/products/mysql/howto/manage-service-users)). Keep the administrator account for setup and migrations. Copy the application user's password somewhere safe; it will be entered into Render next.
+5. Create a separate application user with restricted grants. Aiven's default Console user-creation flow gives a new user admin-level access unless you restrict it. Aiven documents restricting privileges at creation through its API: send a `POST` request to `https://api.aiven.io/v1/project/PROJECT_NAME/service/SERVICE_NAME/user` with this JSON body (replace the username as needed):
+
+   ```json
+   {"username":"todo_app","mysql_grants":["SELECT","INSERT","UPDATE","DELETE"]}
+   ```
+
+   Use Aiven's authenticated API or CLI without putting an API token in this repository. Aiven requires granular-grant support; if the request returns HTTP 400, apply pending service maintenance updates and retry. Its grant documentation says these database privileges apply to databases you create, so verify the actual scope for `registration` before using this account. Connect to Aiven in DBeaver as `todo_app` and run `SHOW GRANTS;`. Confirm it has only the four app data privileges for `registration`, with no administrative rights or write access to other databases. Stop here if the output does not match; do not enter these credentials in Render until it does. Keep the administrator account for setup and migrations, and save the app user's password securely. ([Aiven user and grant settings](https://aiven.io/docs/products/mysql/howto/manage-service-users))
 
 ### Create the web service
 
