@@ -226,40 +226,6 @@ $env:NODE_PATH = "$env:TEMP\todo-browser-checks\node_modules"
 
 These check registration, login/logout, task changes, two-user privacy, validation, CSRF, deletion confirmation, both themes and responsive layouts. The browser runner also refreshes the screenshots. Database tests, JavaScript checks and Chrome checks passed locally on 9 October 2026. Dependency installation was checked in a fresh virtual environment; installing the tools on a completely blank Windows machine wasn't repeated.
 
-GitHub Actions runs the Python, MySQL, JavaScript and Chrome checks on every push and pull request. CI uses a disposable MySQL instance; it doesn't connect to the hosted site or its database. CI screenshots are temporary artifacts uploaded only when a job fails. The local browser command above still refreshes the screenshots in this repository.
+GitHub Actions runs the Python, MySQL, JavaScript and Chrome checks on every push and pull request. CI uses a disposable MySQL instance with its own temporary credentials. CI screenshots are temporary artifacts uploaded only when a job fails. The local browser command above still refreshes the screenshots in this repository.
 
-Locally, the app uses HTTP and clears in-memory login sessions when Flask restarts. The hosted demo uses HTTPS and secure cookies, but sessions still end when its single process restarts or spins down. Email input checks the format in the browser, but the app doesn't verify that the user owns the email address.
-
-## Hosting the demo
-
-**Live URL:** pending the first deployment.
-
-The app is configured for a free Render web service and a free Aiven MySQL database. The free plans are for a small demo: Render can take about a minute to wake after 15 idle minutes, and Aiven's MySQL free tier has 1 GB of storage and can be powered off after extended inactivity ([Render limits](https://render.com/docs/free), [Aiven free tier](https://aiven.io/docs/products/mysql/concepts/mysql-free-tier)). The accounts and to-dos live in MySQL, so a Render restart does not erase them.
-
-### Create the database
-
-1. Sign in to [Aiven](https://console.aiven.io/) and create a **free MySQL** service. Wait until its status is running.
-2. In the service's **Overview** page, note the hostname, port and administrator credentials. Download the service's CA certificate.
-3. In DBeaver, create a MySQL connection to that host and port. Set SSL to verify the server identity and choose the downloaded CA file ([Aiven TLS details](https://aiven.io/docs/platform/concepts/tls-ssl-certificates)). Connect as the administrator.
-4. Before running any SQL, verify that DBeaver is connected to the new Aiven service and that this is a fresh, empty database. Open `database/schema.sql` from this repository and execute it once. It drops and recreates `registration`, so never run it on a database that has data you want to keep.
-5. Create a separate application user with restricted grants. Aiven's default Console user-creation flow gives a new user admin-level access unless you restrict it. Aiven documents restricting privileges at creation through its API: send a `POST` request to `https://api.aiven.io/v1/project/PROJECT_NAME/service/SERVICE_NAME/user` with this JSON body (replace the username as needed):
-
-   ```json
-   {"username":"todo_app","mysql_grants":["SELECT","INSERT","UPDATE","DELETE"]}
-   ```
-
-   Use Aiven's authenticated API or CLI without putting an API token in this repository. Aiven requires granular-grant support; if the request returns HTTP 400, apply pending service maintenance updates and retry. Its grant documentation says these database privileges apply to databases you create, so verify the actual scope for `registration` before using this account. Connect to Aiven in DBeaver as `todo_app` and run `SHOW GRANTS;`. Confirm it has only the four app data privileges for `registration`, with no administrative rights or write access to other databases. Stop here if the output does not match; do not enter these credentials in Render until it does. Keep the administrator account for setup and migrations, and save the app user's password securely. ([Aiven user and grant settings](https://aiven.io/docs/products/mysql/howto/manage-service-users))
-
-### Create the web service
-
-After the hosting setup PR has been reviewed and merged into `main`:
-
-1. Sign in to [Render](https://dashboard.render.com/) and create a Blueprint from this repository's `render.yaml` ([Blueprint settings](https://render.com/docs/blueprint-spec)). Confirm the service is on the **Free** plan and deploys only the `main` branch. Pull request previews are disabled.
-2. In the service's **Environment** settings, enter the Aiven hostname, port, application username and password for `DB_HOST`, `DB_PORT`, `DB_USER` and `DB_PASSWORD`. `DB_NAME` is already set to `registration`; Render generates `SECRET_KEY` for the service.
-3. Under **Secret Files** ([Render settings](https://render.com/docs/configure-environment-variables)), add the downloaded Aiven certificate with the filename `aiven-ca.pem`. The Blueprint points `DB_SSL_CA` to `/etc/secrets/aiven-ca.pem`. Keep `APP_ENV=production` so startup requires the certificate, PyMySQL verifies its CA and hostname, and session cookies are marked secure.
-4. Save the settings and let the service build and deploy. The Blueprint installs `requirements.txt`, runs Gunicorn on Render's `PORT`, and checks `/login`. Auto-deploy is set to wait for GitHub checks to pass on `main`; a pull request does not deploy.
-5. Open the service's `onrender.com` address. Test registration, login/logout, two-user privacy, task add/edit/done/delete, duplicate handling, CSRF rejection, dark mode and the phone layout. The first page request after idle may take about a minute while Render wakes.
-
-No build or startup command runs SQL. For an existing database, use DBeaver and the administrator connection to run only the migration needed by the application version you're deploying. Do not rerun `database/schema.sql`. In particular, if PR #1's optional due-date feature is merged, apply `database/migrations/002_add_todo_due_date.sql` once before deploying code that reads or writes `due_date`; fresh databases created from the updated schema should skip that migration. Record the deployed commit from Render's deploy details. To roll back, redeploy the previous application commit from Render and keep the database as-is; do not reset the schema or delete its data.
-
-Render's free web service has an ephemeral filesystem and can restart or spin down; only data stored in Aiven persists. The app deliberately uses one Gunicorn worker because Flask-Session currently stores sessions in process memory. A restart or idle spin-down will log users out. Aiven's free database is a single small instance without an uptime guarantee, and may need to be powered back on after inactivity. These services are suitable for a class demo, not important or high-traffic data.
+This is a local lab app. Restarting Flask clears the in-memory login sessions. Email input checks the format in the browser, but the app doesn't verify that the user owns the email address.
