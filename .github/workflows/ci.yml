@@ -89,6 +89,7 @@ jobs:
         run: |
           python -m compileall -q app.py auth.py db.py todos.py tests
           python -m pip check
+          python -X utf8 -B tests/production_config.py
           python -X utf8 -B tests/integration.py
 
       - name: Run JavaScript tests
