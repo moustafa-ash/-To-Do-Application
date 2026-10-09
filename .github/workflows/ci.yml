@@ -64,7 +64,20 @@ jobs:
             --env MYSQL_DATABASE=registration \
             mysql:8.4
           for attempt in $(seq 1 60); do
-            if docker exec --env MYSQL_PWD="$DB_PASSWORD" todo-ci-mysql mysqladmin --user=root ping --silent; then
+            if DB_PASSWORD="$DB_PASSWORD" python -c '
+          import os
+          import pymysql
+
+          connection = pymysql.connect(
+              host="127.0.0.1",
+              port=3307,
+              user="root",
+              password=os.environ["DB_PASSWORD"],
+              database="registration",
+              connect_timeout=2,
+          )
+          connection.close()
+          ' >/dev/null 2>&1; then
               exit 0
             fi
             sleep 2
