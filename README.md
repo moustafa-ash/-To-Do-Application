@@ -222,6 +222,8 @@ $env:NODE_PATH = "$env:TEMP\todo-browser-checks\node_modules"
 .\.venv\Scripts\python.exe -X utf8 -B tests/browser.py
 ```
 
-These check registration, login/logout, task changes, two-user privacy, validation, CSRF, deletion confirmation, both themes and responsive layouts. The browser runner also refreshes the screenshots. Database tests, JavaScript checks and Chrome checks passed on 8 October 2026. Dependency installation was checked in a fresh virtual environment; installing the tools on a completely blank Windows machine wasn't repeated.
+These check registration, login/logout, task changes, two-user privacy, validation, CSRF, deletion confirmation, both themes and responsive layouts. The browser runner also refreshes the screenshots. Database tests, JavaScript checks and Chrome checks passed locally on 9 October 2026. Dependency installation was checked in a fresh virtual environment; installing the tools on a completely blank Windows machine wasn't repeated.
+
+GitHub Actions runs the Python, MySQL, JavaScript and Chrome checks on every push and pull request. CI uses a disposable MySQL instance; it doesn't connect to the hosted site or its database. CI screenshots are temporary artifacts uploaded only when a job fails. The local browser command above still refreshes the screenshots in this repository.
 
 This is a local lab app. Restarting Flask clears the in-memory login sessions. Email input checks the format in the browser, but the app doesn't verify that the user owns the email address.

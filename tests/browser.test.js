@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const base = process.argv[2];
 assert.match(base, /^http:\/\/127\.0\.0\.1:\d+$/);
-const screenshots = path.resolve("screenshots");
+const screenshots = process.env.TODO_SCREENSHOT_DIR || path.resolve("screenshots");
 fs.mkdirSync(screenshots, { recursive: true });
 const reviewScreenshots = path.join(require("node:os").tmpdir(), "todo-browser-review");
 fs.mkdirSync(reviewScreenshots, { recursive: true });
