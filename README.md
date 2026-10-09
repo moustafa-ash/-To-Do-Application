@@ -21,62 +21,78 @@ The project was tested with Python 3.14.4 and MySQL 8.4.11 on Windows. [requirem
 
 ## How to run
 
-These steps are for Windows and PowerShell. Keep the terminal in the project folder when running the commands.
+Windows PowerShell. Requires Python 3.14, Git, a running MySQL Server and DBeaver.
 
-### 1. Install the tools
-
-1. Install [Python 3.14](https://www.python.org/downloads/windows/) with pip and make sure `python` is available in the terminal.
-2. Install [Git for Windows](https://git-scm.com/install/windows).
-3. Install [MySQL Server 8.4](https://dev.mysql.com/doc/refman/8.4/en/windows-installation.html), including its required Visual C++ runtime. Run MySQL Configurator after installation. Use TCP/IP on port `3306`, set a root password, and apply the configuration to start the Windows service. Keep the username and password for the next steps.
-4. Install [DBeaver Community](https://dbeaver.io/download/) to run the database script. DBeaver is a database client; MySQL Server must also be installed and running.
-
-Reopen PowerShell after installation and check:
-
-```powershell
-python --version
-git --version
-```
-
-### 2. Download the project and install the packages
+### 1. Clone the repository
 
 ```powershell
 git clone https://github.com/moustafa-ash/-To-Do-Application.git
+```
+
+### 2. Enter the project folder
+
+```powershell
 cd .\-To-Do-Application
+```
+
+### 3. Create the virtual environment
+
+```powershell
 python -m venv .venv
+```
+
+### 4. Install the packages
+
+```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-The commands below use the virtual environment directly, so you don't need to activate it.
+### 5. Prepare the database in DBeaver
 
-### 3. Create the database
+Connect to MySQL using your host, port, username and password. Open the appropriate SQL file, select that connection, then choose **SQL Editor → Execute SQL script**.
 
-**Running `database/schema.sql` deletes and recreates `registration`. Any existing accounts and tasks in that database will be lost. Run it for a new setup or when you want to reset the database.** The fresh schema includes an optional `due_date` column.
+**New installation:** run [database/schema.sql](database/schema.sql) once. It creates the complete database, so skip both migrations afterward. **This script deletes any existing `registration` database and all its accounts and tasks. Do not use it to update a database you want to keep.**
 
-1. In DBeaver, choose **Database → New Database Connection → MySQL**.
-2. Enter `localhost`, port `3306`, and your MySQL username and password. Leave the database field empty. A new local lab installation can use the `root` account set up earlier.
-3. Click **Test Connection** and download the driver if DBeaver asks for it. Finish creating the connection.
-4. Open `database/schema.sql` using **File → Open File**.
-5. Select your MySQL connection for the editor. If the tab says `<none>`, choose the connection under **SQL Editor → Context**.
-6. Clear any text selection, then choose **SQL Editor → Execute SQL script** to run the whole file.
-
-To check the result, run this in a separate SQL editor:
+**Existing database:** keep your data and back it up first. Check its columns and indexes:
 
 ```sql
-SHOW TABLES FROM registration;
-DESCRIBE registration.users;
 DESCRIBE registration.todos;
+SHOW INDEX FROM registration.todos;
 ```
 
-You should see `users` and `todos`. The script contains no test accounts, so you'll register your own account through the website.
+| When to use it | SQL file to run once |
+| --- | --- |
+| `uq_todos_user_title` is missing from `Key_name` | [001_unique_todo_titles.sql](database/migrations/001_unique_todo_titles.sql) |
+| `due_date` is missing from the columns | [002_add_todo_due_date.sql](database/migrations/002_add_todo_due_date.sql) |
 
-### 4. Set up `.env`
+Before migration 001, check for duplicates and rename any conflicting titles within the same user's list until this query returns no rows:
+
+```sql
+SELECT user_id, title, COUNT(*) AS copies
+FROM registration.todos
+GROUP BY user_id, title
+HAVING COUNT(*) > 1;
+```
+
+If both changes are missing, run 001 then 002. If both exist, skip both migrations. These migrations preserve accounts and tasks; do not rerun them once applied. The All / Open / Done filters need no migration.
+
+### 6. Create `.env` (new clone only; keep an existing `.env`)
 
 ```powershell
 Copy-Item .env.example .env
+```
+
+### 7. Generate a secret key
+
+```powershell
 .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-Open `.env` in a text editor. Enter your MySQL details and use the generated value for `SECRET_KEY`:
+### 8. Open `.env` and save your MySQL details and generated key
+
+```powershell
+notepad .env
+```
 
 ```dotenv
 DB_HOST=localhost
@@ -84,50 +100,24 @@ DB_PORT=3306
 DB_USER=your_mysql_username
 DB_PASSWORD=your_mysql_password
 DB_NAME=registration
-SECRET_KEY=paste_your_generated_secret_here
+SECRET_KEY=paste_the_generated_key_here
 ```
 
-If your password contains spaces or `#`, put quotes around it, for example `DB_PASSWORD='your password#here'`. Use the same MySQL account you tested in DBeaver, or one with permission to read and write the tables.
-
-`.env` is ignored by Git. Each teammate needs their own copy. If you're updating an existing setup, keep your current `.env` instead of copying over it.
-
-### 5. Start the server
-
-Check the database connection first:
+### 9. Check the database connection
 
 ```powershell
 .\.venv\Scripts\python.exe -c "from db import get_connection; connection = get_connection(); print('Connected to MySQL successfully'); connection.close()"
 ```
 
-Then start Flask:
+### 10. Start Flask
 
 ```powershell
 .\.venv\Scripts\python.exe -m flask --app app run
 ```
 
-### 6. Open the website
+### 11. Open the registration page
 
-Open [http://127.0.0.1:5000/register](http://127.0.0.1:5000/register). Registering logs you in and opens your list. You can log out from the header and log back in at [http://127.0.0.1:5000/login](http://127.0.0.1:5000/login).
-
-Keep the terminal running while using the site. Press **Ctrl+C** to stop it, and restart it after changing Python files or `.env`.
-
-If the database connection fails, check the MySQL service, your `.env` details and whether the whole schema script ran. If port 5000 is already in use, start Flask with `--port 5001` and open the same address using port 5001. If a form becomes stale after logout or a restart, reopen the page and try again.
-
-### If you already have a database
-
-You don't need to reset it to get duplicate-title protection. Check for existing duplicates and the unique index:
-
-```sql
-SELECT user_id, title, COUNT(*) AS copies
-FROM registration.todos
-GROUP BY user_id, title
-HAVING COUNT(*) > 1;
-SHOW INDEX FROM registration.todos;
-```
-
-Rename any duplicates first. If `uq_todos_user_title` is missing, run [database/migrations/001_unique_todo_titles.sql](database/migrations/001_unique_todo_titles.sql) once. Skip this migration if you used the full schema, because it already creates the index.
-
-To add optional due dates to an existing database without deleting tasks, run [database/migrations/002_add_todo_due_date.sql](database/migrations/002_add_todo_due_date.sql) once. Existing tasks keep a `NULL` due date until you edit them. Fresh installations already have this column in `schema.sql` and must skip the migration.
+[http://127.0.0.1:5000/register](http://127.0.0.1:5000/register)
 
 ## Features
 
