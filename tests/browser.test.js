@@ -219,6 +219,71 @@ async function run(browser, enabled) {
             await a.setViewportSize({width:1366,height:900});
             await shot(a, "03-todos-desktop.png");
         }
+        // Exercise the same server-rendered controls with and without JavaScript.
+        const filters = a.getByRole("navigation", {name:"Filter to-dos"});
+        const selectFilter = async (label, value) => {
+            await filters.getByRole("link", {name:label, exact:true}).click();
+            await a.waitForURL(base + `/todos?filter=${value}`);
+            assert.equal(await filters.getByRole("link", {name:label, exact:true}).getAttribute("aria-current"), "page");
+        };
+        const currentFilter = () => assert.equal(new URL(a.url()).searchParams.get("filter"), "open");
+        await selectFilter("All", "all");
+        assert.equal(await a.locator(".todo-item").count(), 3);
+        await selectFilter("Done", "done");
+        assert.equal(await a.locator(".todo-item").count(), 1);
+        assert.ok(await lab.isVisible());
+        if (enabled) await checkThemes(a, "done filter");
+        else await checkLayout(a, "done filter without JS", 360);
+        await lab.getByRole("button", {name:"Mark open",exact:true}).click();
+        await a.waitForLoadState("load");
+        assert.equal(new URL(a.url()).searchParams.get("filter"), "done");
+        assert.equal(await a.locator(".todo-item").count(), 0);
+        assert.ok(await a.getByText("No done to-dos yet", {exact:true}).isVisible());
+        await selectFilter("Open", "open");
+        assert.equal(await a.locator(".todo-item").count(), 3);
+        if (enabled) await checkThemes(a, "open filter");
+        else await checkLayout(a, "open filter without JS", 360);
+        await a.locator("#new-title").fill("Filter browser task");
+        await a.getByRole("button", {name:"Add to-do",exact:true}).click();
+        await a.waitForLoadState("load");
+        currentFilter();
+        const filterRow = a.locator(".todo-item").filter({hasText:"Filter browser task"});
+        await filterRow.getByRole("link", {name:"Edit",exact:true}).click();
+        await a.getByLabel("Edit title", {exact:true}).fill("");
+        await a.getByRole("button", {name:"Save changes",exact:true}).click();
+        assert.ok(await a.getByText("Title is required", {exact:true}).isVisible());
+        currentFilter();
+        await a.getByRole("link", {name:"Cancel",exact:true}).click();
+        currentFilter();
+        await filterRow.getByRole("link", {name:"Edit",exact:true}).click();
+        await a.getByLabel("Edit title", {exact:true}).fill("Filter browser task edited");
+        await a.getByRole("button", {name:"Save changes",exact:true}).click();
+        await a.waitForLoadState("load");
+        currentFilter();
+        if (enabled) {
+            a.once("dialog", dialog => dialog.dismiss());
+            await filterRow.getByRole("button", {name:"Delete",exact:true}).click();
+            assert.ok(await filterRow.isVisible());
+            currentFilter();
+            a.once("dialog", dialog => dialog.accept());
+            await filterRow.getByRole("button", {name:"Delete",exact:true}).click();
+        } else {
+            await filterRow.getByRole("link", {name:"Delete",exact:true}).click();
+            currentFilter();
+            assert.ok(await a.getByRole("heading", {name:"Delete this to-do?",exact:true}).isVisible());
+            await a.getByRole("link", {name:"Cancel",exact:true}).click();
+            currentFilter();
+            await filterRow.getByRole("link", {name:"Delete",exact:true}).click();
+            await a.getByRole("button", {name:"Delete to-do",exact:true}).click();
+        }
+        await a.waitForLoadState("load");
+        currentFilter();
+        assert.equal(await filterRow.count(), 0);
+        await lab.getByRole("button", {name:"Mark done",exact:true}).click();
+        await a.waitForLoadState("load");
+        currentFilter();
+        assert.equal(await lab.count(), 0);
+        await selectFilter("All", "all");
         await lab.getByRole("button", {name:"Mark open",exact:true}).click();
         await a.waitForLoadState("load");
         assert.equal(await a.locator(".todo-item.is-done").count(), 0);

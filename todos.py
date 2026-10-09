@@ -58,15 +58,27 @@ def _todo_id(raw_id):
     return value
 
 
-def _get_user_todos(user_id):
+def _active_filter():
+    value = request.args.get("filter", "all")
+    return value if value in ("all", "open", "done") else "all"
+
+
+def _list_url():
+    active_filter = _active_filter()
+    return url_for("todos.index", filter=active_filter if active_filter != "all" else None)
+
+
+def _get_user_todos(user_id, active_filter="all"):
     connection = get_connection()
     try:
         with connection.cursor() as cursor:
-            cursor.execute(
-                """SELECT todo_id, title, due_date, is_done, created_at
-                    FROM todos WHERE user_id = %s ORDER BY todo_id DESC""",
-                (user_id,),
-            )
+            sql = """SELECT todo_id, title, due_date, is_done, created_at
+                     FROM todos WHERE user_id = %s"""
+            parameters = (user_id,)
+            if active_filter in ("open", "done"):
+                sql += " AND is_done = %s"
+                parameters += (1 if active_filter == "done" else 0,)
+            cursor.execute(sql + " ORDER BY todo_id DESC", parameters)
             return cursor.fetchall()
     finally:
         connection.close()
@@ -83,8 +95,13 @@ def _render_list(
     delete_id=None,
     status=200,
 ):
+    active_filter = _active_filter()
+    has_todos = False
     try:
-        user_todos = _get_user_todos(user_id)
+        user_todos = _get_user_todos(user_id, active_filter)
+        has_todos = bool(user_todos)
+        if not has_todos and active_filter != "all":
+            has_todos = bool(_get_user_todos(user_id))
         if delete_id is not None and not any(
             todo["todo_id"] == delete_id for todo in user_todos
         ):
@@ -108,6 +125,8 @@ def _render_list(
     return render_template(
         "todos.html",
         todos=user_todos,
+        active_filter=active_filter,
+        has_todos=has_todos,
         title=title,
         due_date=due_date,
         edit_id=edit_id,
@@ -179,13 +198,13 @@ def add():
                 user_id, title=title, due_date=due_date_text, status=400
             )
         flash("Your to-do could not be added. Please try again.", "error")
-        return redirect(url_for("todos.index"))
+        return redirect(_list_url())
     finally:
         if connection:
             connection.close()
 
     flash("To-do added.", "success")
-    return redirect(url_for("todos.index"))
+    return redirect(_list_url())
 
 
 @todos.post("/todos/<todo_id>/edit")
@@ -249,7 +268,7 @@ def edit(todo_id):
                 status=400,
             )
         flash("Your to-do could not be updated. Please try again.", "error")
-        return redirect(url_for("todos.index"))
+        return redirect(_list_url())
     finally:
         if connection:
             connection.close()
@@ -258,7 +277,7 @@ def edit(todo_id):
         "To-do updated." if changed else "To-do not found.",
         "success" if changed else "error",
     )
-    return redirect(url_for("todos.index"))
+    return redirect(_list_url())
 
 
 @todos.post("/todos/<todo_id>/done")
@@ -271,7 +290,7 @@ def set_done(todo_id):
     valid_statuses = {"done": 1, "open": 0}
     if value not in valid_statuses:
         flash("Choose a valid done or open status.", "error")
-        return redirect(url_for("todos.index"))
+        return redirect(_list_url())
 
     connection = None
     try:
@@ -287,7 +306,7 @@ def set_done(todo_id):
         if connection:
             connection.rollback()
         flash("Your to-do status could not be changed. Please try again.", "error")
-        return redirect(url_for("todos.index"))
+        return redirect(_list_url())
     finally:
         if connection:
             connection.close()
@@ -296,7 +315,7 @@ def set_done(todo_id):
         "To-do status updated." if changed else "To-do not found.",
         "success" if changed else "error",
     )
-    return redirect(url_for("todos.index"))
+    return redirect(_list_url())
 
 
 @todos.post("/todos/<todo_id>/delete")
@@ -320,7 +339,7 @@ def delete(todo_id):
         if connection:
             connection.rollback()
         flash("Your to-do could not be deleted. Please try again.", "error")
-        return redirect(url_for("todos.index"))
+        return redirect(_list_url())
     finally:
         if connection:
             connection.close()
@@ -329,4 +348,4 @@ def delete(todo_id):
         "To-do deleted." if changed else "To-do not found.",
         "success" if changed else "error",
     )
-    return redirect(url_for("todos.index"))
+    return redirect(_list_url())

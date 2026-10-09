@@ -152,7 +152,9 @@ The app prevents duplicate titles in the same user's list. Another user can use 
 
 ### Bonus
 
-We added **dark mode**, **automated tests**, and optional **due dates for tasks**. The assignment caps the bonus at +1.
+We added **dark mode**, **automated tests**, optional **due dates for tasks**, and **All / Open / Done filters**. The assignment caps the bonus at +1.
+
+Use All, Open or Done above the list to choose which tasks to show. All is the default. The filter stays selected when you add, edit, change a task's status or delete it, and filtering also works with JavaScript turned off.
 
 Click the moon in light mode to switch to dark mode, or the sun to switch back. Your browser remembers the choice. With JavaScript disabled, the site stays in light mode. If local storage is blocked, the switch still works on the current page but the choice isn't saved.
 
