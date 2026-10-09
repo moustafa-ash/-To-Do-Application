@@ -50,7 +50,7 @@ The commands below use the virtual environment directly, so you don't need to ac
 
 ### 3. Create the database
 
-**Running `database/schema.sql` deletes and recreates `registration`. Any existing accounts and tasks in that database will be lost. Run it for a new setup or when you want to reset the database.**
+**Running `database/schema.sql` deletes and recreates `registration`. Any existing accounts and tasks in that database will be lost. Run it for a new setup or when you want to reset the database.** The fresh schema includes an optional `due_date` column.
 
 1. In DBeaver, choose **Database → New Database Connection → MySQL**.
 2. Enter `localhost`, port `3306`, and your MySQL username and password. Leave the database field empty. A new local lab installation can use the `root` account set up earlier.
@@ -127,6 +127,8 @@ SHOW INDEX FROM registration.todos;
 
 Rename any duplicates first. If `uq_todos_user_title` is missing, run [database/migrations/001_unique_todo_titles.sql](database/migrations/001_unique_todo_titles.sql) once. Skip this migration if you used the full schema, because it already creates the index.
 
+To add optional due dates to an existing database without deleting tasks, run [database/migrations/002_add_todo_due_date.sql](database/migrations/002_add_todo_due_date.sql) once. Existing tasks keep a `NULL` due date until you edit them. Fresh installations already have this column in `schema.sql` and must skip the migration.
+
 ## Features
 
 | Requirement | What the app does |
@@ -134,8 +136,8 @@ Rename any duplicates first. If `uq_todos_user_title` is missing, run [database/
 | R1 | Register with name, email, password and confirmation. Duplicate email shows `Email Already Exists`. Successful registration logs the user in and opens the list. |
 | R2 | Log in with email and password. Wrong password and unknown email both show `Invalid email or password`. Logout clears the session. |
 | R3 | Redirect visitors to login. Logged-in users only see their own tasks, newest first. |
-| R4 | Add a task. |
-| R5 | Edit a task's title. |
+| R4 | Add a task with an optional due date. |
+| R5 | Edit a task's title and optional due date. |
 | R6 | Mark a task done or open. Done tasks have a check mark, a crossed-out title and a `Done` label. |
 | R7 | Delete a task after confirmation. With JavaScript disabled, the app shows a confirmation row with Delete and Cancel buttons. |
 | R8 | Validate forms in JavaScript and again on the server. Invalid input shows messages on the same page without saving changes. |
@@ -150,7 +152,7 @@ The app prevents duplicate titles in the same user's list. Another user can use 
 
 ### Bonus
 
-We added **dark mode** and **automated tests**. The assignment caps the bonus at +1.
+We added **dark mode**, **automated tests**, and optional **due dates for tasks**. The assignment caps the bonus at +1.
 
 Click the moon in light mode to switch to dark mode, or the sun to switch back. Your browser remembers the choice. With JavaScript disabled, the site stays in light mode. If local storage is blocked, the switch still works on the current page but the choice isn't saved.
 

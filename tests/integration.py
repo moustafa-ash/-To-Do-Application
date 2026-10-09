@@ -253,6 +253,157 @@ class Integration(unittest.TestCase):
         self.post(self.a, f"/todos/{second}/delete")
         self.assertIn(b"Your list is empty", self.a.get("/todos").data)
 
+    def test_due_date_validation_editing_and_user_isolation(self):
+        aid = self.register(self.a, self.a_email)
+        bid = self.register(self.b, self.b_email)
+
+        self.post(self.a, "/todos", {"title": "No due date", "due_date": ""})
+        blank_due = next(row for row in self.rows(aid) if row["title"] == "No due date")
+        self.assertIsNone(blank_due["due_date"])
+
+        self.post(
+            self.a,
+            "/todos",
+            {"title": "Leap day", "due_date": "2028-02-29"},
+        )
+        leap = next(row for row in self.rows(aid) if row["title"] == "Leap day")
+        leap_id = leap["todo_id"]
+        self.assertEqual(leap["due_date"].isoformat(), "2028-02-29")
+        edit_page = self.a.get(f"/todos?edit={leap_id}").get_data(as_text=True)
+        self.assertIn('value="2028-02-29"', edit_page)
+
+        self.post(
+            self.a,
+            f"/todos/{leap_id}/edit",
+            {"title": "Leap day", "due_date": "9999-12-31"},
+        )
+        self.assertEqual(
+            next(row for row in self.rows(aid) if row["todo_id"] == leap_id)[
+                "due_date"
+            ].isoformat(),
+            "9999-12-31",
+        )
+        self.post(
+            self.a,
+            f"/todos/{leap_id}/edit",
+            {"title": "Leap day", "due_date": ""},
+        )
+        self.assertIsNone(
+            next(row for row in self.rows(aid) if row["todo_id"] == leap_id)[
+                "due_date"
+            ]
+        )
+
+        self.post(
+            self.a,
+            "/todos",
+            {"title": "Minimum date", "due_date": "1000-01-01"},
+        )
+        minimum = next(row for row in self.rows(aid) if row["title"] == "Minimum date")
+        self.assertEqual(minimum["due_date"].isoformat(), "1000-01-01")
+
+        self.post(
+            self.a,
+            f"/todos/{leap_id}/edit",
+            {"title": "Leap day", "due_date": "2028-02-29"},
+        )
+        for invalid_date in ("0001-01-01", "2027-02-29", "10000-01-01"):
+            response = self.post(
+                self.a,
+                f"/todos/{leap_id}/edit",
+                {"title": "Leap day", "due_date": invalid_date},
+            )
+            self.assertEqual(response.status_code, 400)
+            self.assertIn(b"Enter a valid due date", response.data)
+            self.assertEqual(
+                next(row for row in self.rows(aid) if row["todo_id"] == leap_id)[
+                    "due_date"
+                ].isoformat(),
+                "2028-02-29",
+            )
+
+        response = self.post(
+            self.a,
+            f"/todos/{leap_id}/edit",
+            {"title": "   ", "due_date": "2030-01-01"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b"Title is required", response.data)
+        self.assertEqual(
+            next(row for row in self.rows(aid) if row["todo_id"] == leap_id)[
+                "due_date"
+            ].isoformat(),
+            "2028-02-29",
+        )
+
+        self.post(
+            self.a,
+            "/todos",
+            {"title": "Existing title", "due_date": "2040-04-05"},
+        )
+        existing = next(
+            row for row in self.rows(aid) if row["title"] == "Existing title"
+        )
+        self.post(
+            self.a,
+            f"/todos/{leap_id}/edit",
+            {"title": "Existing title", "due_date": "2050-05-06"},
+        )
+        self.assertEqual(
+            next(row for row in self.rows(aid) if row["todo_id"] == leap_id)[
+                "due_date"
+            ].isoformat(),
+            "2028-02-29",
+        )
+        self.assertEqual(existing["due_date"].isoformat(), "2040-04-05")
+
+        self.post(
+            self.b,
+            "/todos",
+            {"title": "Private date", "due_date": "2035-06-07"},
+        )
+        private = self.rows(bid)[0]
+        self.post(
+            self.a,
+            f"/todos/{private['todo_id']}/edit",
+            {"title": "Changed by another user", "due_date": "2045-08-09"},
+        )
+        self.assertEqual(self.rows(bid)[0]["due_date"].isoformat(), "2035-06-07")
+
+    def test_due_date_migration_selects_database_and_preserves_rows(self):
+        migration_db = "registration_verify_migration_" + uuid.uuid4().hex[:12]
+        connection = admin_connection()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(f"CREATE DATABASE `{migration_db}`")
+                cursor.execute(
+                    f"CREATE TABLE `{migration_db}`.todos ("
+                    "todo_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, "
+                    "title VARCHAR(200) NOT NULL) ENGINE=InnoDB"
+                )
+                cursor.execute(
+                    f"INSERT INTO `{migration_db}`.todos (title) VALUES (%s)",
+                    ("Existing task",),
+                )
+
+            # This connection has no default database; the migration must select one.
+            migration = (ROOT / "database/migrations/002_add_todo_due_date.sql")
+            sql = migration.read_text().replace("registration", migration_db)
+            with connection.cursor() as cursor:
+                for statement in sql.split(";"):
+                    if statement.strip():
+                        cursor.execute(statement)
+                cursor.execute(
+                    f"SELECT title, due_date FROM `{migration_db}`.todos"
+                )
+                self.assertEqual(
+                    cursor.fetchall(), [{"title": "Existing task", "due_date": None}]
+                )
+        finally:
+            with connection.cursor() as cursor:
+                cursor.execute(f"DROP DATABASE IF EXISTS `{migration_db}`")
+            connection.close()
+
     def test_friendly_failure_pages(self):
         with self.a.session_transaction() as state:
             state["user_id"] = 1

@@ -140,6 +140,9 @@ label { display: block; margin-bottom: 7px; font-size: .875rem; font-weight: 600
 .add-section h2 { margin-bottom: 16px; font-size: 1.125rem; font-weight: 600; }
 .add-row { display: flex; gap: 12px; }
 .add-row .button { flex-shrink: 0; }
+.date-field { width: min(100%, 260px); margin-top: 18px; }
+.date-field input { min-height: 44px; }
+.date-field .field-help { font-weight: 400; }
 .inline-error { color: var(--danger); font-size: .875rem; margin-top: 8px; }
 .inline-error:empty { display: none; }
 .list-section { border-top: 1px solid var(--line); padding: 24px 32px 8px; }
@@ -153,6 +156,7 @@ label { display: block; margin-bottom: 7px; font-size: .875rem; font-weight: 600
 .todo-content { flex: 1; min-width: 0; }
 .todo-title { display: block; overflow-wrap: anywhere; line-height: 1.5; }
 .task-state { color: var(--muted); font-size: .75rem; display: block; margin-top: 3px; }
+.task-due-date { color: var(--muted); display: block; font-size: .8125rem; margin-top: 5px; }
 .is-done .todo-title { text-decoration: line-through; text-decoration-color: var(--strike); color: var(--muted); }
 .is-done .status-button, .is-done .task-state { color: var(--success); }
 .todo-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
