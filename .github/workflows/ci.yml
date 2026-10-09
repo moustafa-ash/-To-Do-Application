@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3307"
+      DB_USER: root
+      DB_NAME: registration
+      SECRET_KEY: github-actions-only-test-secret
+      NODE_BINARY: node
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python 3.14.4
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: "3.14.4"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+
+      - name: Install Python requirements
+        run: python -m pip install -r requirements.txt
+
+      - name: Install Playwright and Chrome
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/browser-node" --no-save playwright@1.62.1
+          echo "NODE_PATH=$RUNNER_TEMP/browser-node/node_modules" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/browser-node/node_modules/.bin/playwright" install --with-deps chrome
+
+      - name: Start isolated MySQL 8.4
+        shell: bash
+        run: |
+          DB_PASSWORD="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          echo "::add-mask::$DB_PASSWORD"
+          echo "DB_PASSWORD=$DB_PASSWORD" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/todo-screenshots"
+          docker run --detach --name todo-ci-mysql \
+            --publish 127.0.0.1:3307:3306 \
+            --env MYSQL_ROOT_PASSWORD="$DB_PASSWORD" \
+            --env MYSQL_ROOT_HOST="%" \
+            --env MYSQL_DATABASE=registration \
+            mysql:8.4
+          for attempt in $(seq 1 60); do
+            if DB_PASSWORD="$DB_PASSWORD" python -c '
+          import os
+          import pymysql
+
+          connection = pymysql.connect(
+              host="127.0.0.1",
+              port=3307,
+              user="root",
+              password=os.environ["DB_PASSWORD"],
+              database="registration",
+              connect_timeout=2,
+          )
+          connection.close()
+          ' >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs todo-ci-mysql
+          exit 1
+
+      - name: Run Python checks and MySQL integration tests
+        run: |
+          python -m compileall -q app.py auth.py db.py todos.py tests
+          python -m pip check
+          python -X utf8 -B tests/integration.py
+
+      - name: Run JavaScript tests
+        run: |
+          node tests/auth_validation.test.js
+          node tests/todos_validation.test.js
+          node tests/theme.test.js
+
+      - name: Run Chrome browser tests
+        env:
+          TODO_SCREENSHOT_DIR: ${{ runner.temp }}/todo-screenshots
+          TODO_REVIEW_SCREENSHOT_DIR: ${{ runner.temp }}/todo-browser-review
+        run: python -X utf8 -B tests/browser.py
+
+      - name: Upload temporary screenshots after failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ci-browser-screenshots
+          path: |
+            ${{ runner.temp }}/todo-screenshots/
+            ${{ runner.temp }}/todo-browser-review/
+          if-no-files-found: ignore
+          retention-days: 3
+
+      - name: Remove temporary MySQL container
+        if: always()
+        run: docker rm --force todo-ci-mysql || true
