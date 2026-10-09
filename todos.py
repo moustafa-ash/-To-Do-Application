@@ -17,6 +17,8 @@ from db import get_connection
 todos = Blueprint("todos", __name__)
 
 MAX_TODO_ID = 2_147_483_647
+MIN_MYSQL_DATE = date(1000, 1, 1)
+MAX_MYSQL_DATE = date(9999, 12, 31)
 
 
 def _parse_due_date(raw_value):
@@ -27,7 +29,7 @@ def _parse_due_date(raw_value):
         parsed = date.fromisoformat(raw_value)
     except ValueError:
         return None, False
-    if parsed.isoformat() != raw_value:
+    if parsed.isoformat() != raw_value or not MIN_MYSQL_DATE <= parsed <= MAX_MYSQL_DATE:
         return None, False
     return parsed, True
 

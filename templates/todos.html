@@ -13,7 +13,7 @@
             <div class="add-row"><input id="new-title" name="title" type="text" value="{{ title }}" placeholder="e.g. Finish the database lab" aria-describedby="title-help new-title-error" data-title-input><button class="button button-primary" type="submit">Add to-do</button></div>
             <div class="date-field">
                 <label for="new-due-date">Due date <span class="field-help">(optional)</span></label>
-                <input id="new-due-date" name="due_date" type="date" value="{{ due_date }}">
+                <input id="new-due-date" name="due_date" type="date" min="1000-01-01" max="9999-12-31" value="{{ due_date }}">
             </div>
             <p id="new-title-error" class="inline-error" data-title-error role="alert"></p>
             <p id="title-help" class="field-help">Up to 200 characters. Give each to-do its own title.</p>
@@ -39,7 +39,7 @@
                                 <input id="edit-title-{{ todo.todo_id }}" name="title" type="text" value="{{ edit_title }}" aria-describedby="edit-error-{{ todo.todo_id }}" data-title-input autofocus>
                                 <div class="date-field">
                                     <label for="edit-due-date-{{ todo.todo_id }}">Due date <span class="field-help">(optional)</span></label>
-                                    <input id="edit-due-date-{{ todo.todo_id }}" name="due_date" type="date" value="{{ edit_due_date }}">
+                                    <input id="edit-due-date-{{ todo.todo_id }}" name="due_date" type="date" min="1000-01-01" max="9999-12-31" value="{{ edit_due_date }}">
                                 </div>
                                 <p id="edit-error-{{ todo.todo_id }}" class="inline-error" data-title-error role="alert"></p>
                                 <div class="edit-actions"><button class="button button-primary" type="submit">Save changes</button><a class="button button-quiet" href="{{ url_for('todos.index') }}">Cancel</a></div>
