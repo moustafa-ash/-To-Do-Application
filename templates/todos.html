@@ -20,7 +20,10 @@
         </form>
     </section>
     <section class="list-section" aria-labelledby="list-heading">
-        <h2 id="list-heading">Your list</h2>
+        <div class="list-section-heading">
+            <h2 id="list-heading">Your list</h2>
+            <p class="open-todo-count" aria-live="polite"><strong>{{ open_todo_count }}</strong> open</p>
+        </div>
         {% if not todos %}
             <div class="empty-state"><h3>Your list is empty</h3><p>Add a to-do above to get started.</p></div>
         {% else %}

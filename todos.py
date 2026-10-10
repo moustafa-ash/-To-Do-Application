@@ -105,9 +105,11 @@ def _render_list(
         user_todos = []
         flash("Your to-do list could not be loaded. Please try again.", "error")
         status = 503
+    open_todo_count = sum(not todo["is_done"] for todo in user_todos)
     return render_template(
         "todos.html",
         todos=user_todos,
+        open_todo_count=open_todo_count,
         title=title,
         due_date=due_date,
         edit_id=edit_id,
