@@ -84,6 +84,20 @@ def _get_user_todos(user_id, active_filter="all"):
         connection.close()
 
 
+def _get_open_todo_count(user_id):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT COUNT(*) AS open_count FROM todos "
+                "WHERE user_id = %s AND is_done = 0",
+                (user_id,),
+            )
+            return cursor.fetchone()["open_count"]
+    finally:
+        connection.close()
+
+
 def _render_list(
     user_id,
     *,
@@ -99,6 +113,7 @@ def _render_list(
     has_todos = False
     try:
         user_todos = _get_user_todos(user_id, active_filter)
+        open_todo_count = _get_open_todo_count(user_id)
         has_todos = bool(user_todos)
         if not has_todos and active_filter != "all":
             has_todos = bool(_get_user_todos(user_id))
@@ -120,11 +135,13 @@ def _render_list(
                 )
     except pymysql.MySQLError:
         user_todos = []
+        open_todo_count = 0
         flash("Your to-do list could not be loaded. Please try again.", "error")
         status = 503
     return render_template(
         "todos.html",
         todos=user_todos,
+        open_todo_count=open_todo_count,
         active_filter=active_filter,
         has_todos=has_todos,
         title=title,

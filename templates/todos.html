@@ -20,7 +20,10 @@
         </form>
     </section>
     <section class="list-section" aria-labelledby="list-heading">
-        <h2 id="list-heading">Your list</h2>
+        <div class="list-section-heading">
+            <h2 id="list-heading">Your list</h2>
+            <p class="open-todo-count" aria-live="polite"><strong>{{ open_todo_count }}</strong> open</p>
+        </div>
         <nav class="todo-filters" aria-label="Filter to-dos">
             {% for value, label in [('all', 'All'), ('open', 'Open'), ('done', 'Done')] %}
                 <a class="button {{ 'button-primary' if active_filter == value else 'button-quiet' }}" href="{{ url_for('todos.index', filter=value) }}"{% if active_filter == value %} aria-current="page"{% endif %}>{{ label }}</a>

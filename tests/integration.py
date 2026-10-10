@@ -331,6 +331,29 @@ class Integration(unittest.TestCase):
         self.post(self.a, f"/todos/{second}/delete")
         self.assertIn(b"Your list is empty", self.a.get("/todos").data)
 
+    def test_open_todo_count_tracks_each_users_list(self):
+        aid = self.register(self.a, self.a_email)
+        bid = self.register(self.b, self.b_email)
+        self.assertIn(b">0</strong> open", self.a.get("/todos").data)
+
+        self.post(self.a, "/todos", {"title": "First open task"})
+        first_id = self.rows(aid)[0]["todo_id"]
+        self.post(self.a, "/todos", {"title": "Second open task"})
+        second_id = self.rows(aid)[0]["todo_id"]
+        self.assertIn(b">2</strong> open", self.a.get("/todos").data)
+        self.assertIn(b">0</strong> open", self.b.get("/todos").data)
+
+        self.post(self.a, f"/todos/{first_id}/done", {"status": "done"})
+        self.assertIn(b">1</strong> open", self.a.get("/todos").data)
+        self.assertIn(b">1</strong> open", self.a.get("/todos?filter=done").data)
+        self.assertIn(b">1</strong> open", self.a.get("/todos?filter=open").data)
+        self.post(self.a, f"/todos/{first_id}/done", {"status": "open"})
+        self.assertIn(b">2</strong> open", self.a.get("/todos").data)
+
+        self.post(self.a, f"/todos/{second_id}/delete")
+        self.assertIn(b">1</strong> open", self.a.get("/todos").data)
+        self.assertEqual(len(self.rows(bid)), 0)
+
     def test_due_date_validation_editing_and_user_isolation(self):
         aid = self.register(self.a, self.a_email)
         bid = self.register(self.b, self.b_email)
