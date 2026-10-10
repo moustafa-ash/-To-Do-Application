@@ -142,15 +142,17 @@ The app prevents duplicate titles in the same user's list. Another user can use 
 
 ### Bonus
 
-We added **dark mode**, **automated tests**, optional **due dates for tasks**, and **All / Open / Done filters**. The assignment caps the bonus at +1.
+We added **dark mode**, **automated tests**, optional **due dates for tasks**, **All / Open / Done filters**, and an **open-task count**. The assignment caps the bonus at +1.
 
 Use All, Open or Done above the list to choose which tasks to show. All is the default. The filter stays selected when you add, edit, change a task's status or delete it, and filtering also works with JavaScript turned off.
+
+The number beside “Your list” shows how many of your tasks are still open. It updates when you add, complete, reopen or delete a task, and shows the same total whichever filter you choose.
 
 Click the moon in light mode to switch to dark mode, or the sun to switch back. Your browser remembers the choice. With JavaScript disabled, the site stays in light mode. If local storage is blocked, the switch still works on the current page but the choice isn't saved.
 
 ## Screenshots
 
-The screenshots use demonstration accounts in a temporary database.
+The screenshots use demonstration accounts in a temporary database. The list views show the filters and the open-task count.
 
 ### Register page with error messages
 
@@ -160,19 +162,19 @@ The screenshots use demonstration accounts in a temporary database.
 
 ![Login page](screenshots/02-login-desktop.png)
 
-### List with some tasks, including one done
+### List with filters, two open tasks and one done
 
-![To-do list with one completed task](screenshots/03-todos-desktop.png)
+![To-do list with All, Open and Done filters and a count of two open tasks](screenshots/03-todos-desktop.png)
 
 ### Phone-sized window, 360 px wide
 
-![To-do list on a phone-sized screen](screenshots/04-todos-mobile-360.png)
+![Filters and open-task count on a 360 px phone-sized screen](screenshots/04-todos-mobile-360.png)
 
 ### Dark mode
 
-![Dark mode on a laptop](screenshots/05-todos-dark-desktop.png)
+![Filters and open-task count in dark mode on a laptop](screenshots/05-todos-dark-desktop.png)
 
-![Dark mode on a phone-sized screen](screenshots/06-todos-dark-mobile-360.png)
+![Filters and open-task count in dark mode on a 360 px phone-sized screen](screenshots/06-todos-dark-mobile-360.png)
 
 ## Assignment questions
 
@@ -216,7 +218,7 @@ $env:NODE_PATH = "$env:TEMP\todo-browser-checks\node_modules"
 .\.venv\Scripts\python.exe -X utf8 -B tests/browser.py
 ```
 
-These check registration, login/logout, task changes, two-user privacy, validation, CSRF, deletion confirmation, both themes and responsive layouts. The browser runner also refreshes the screenshots. Database tests, JavaScript checks and Chrome checks passed locally on 9 October 2026. Dependency installation was checked in a fresh virtual environment; installing the tools on a completely blank Windows machine wasn't repeated.
+These check registration, login/logout, task changes, two-user privacy, validation, CSRF, deletion confirmation, filters, open-task counts, both themes and responsive layouts. The browser runner also refreshes the screenshots. Database tests, JavaScript checks and Chrome checks passed locally on 10 October 2026. Dependency installation was checked in a fresh virtual environment; installing the tools on a completely blank Windows machine wasn't repeated.
 
 GitHub Actions runs the Python, MySQL, JavaScript and Chrome checks on every push and pull request. CI uses a disposable MySQL instance with its own temporary credentials. CI screenshots are temporary artifacts uploaded only when a job fails. The local browser command above still refreshes the screenshots in this repository.
 
