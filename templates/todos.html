@@ -7,7 +7,7 @@
 <div class="working-sheet">
     <section class="add-section" aria-labelledby="add-heading">
         <h2 id="add-heading">What needs to be done?</h2>
-        <form method="post" action="{{ url_for('todos.add') }}" data-title-form>
+        <form method="post" action="{{ url_for('todos.add', filter=active_filter) }}" data-title-form>
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <label class="visually-hidden" for="new-title">New to-do title</label>
             <div class="add-row"><input id="new-title" name="title" type="text" value="{{ title }}" placeholder="e.g. Finish the database lab" aria-describedby="title-help new-title-error" data-title-input><button class="button button-primary" type="submit">Add to-do</button></div>
@@ -24,8 +24,17 @@
             <h2 id="list-heading">Your list</h2>
             <p class="open-todo-count" aria-live="polite"><strong>{{ open_todo_count }}</strong> open</p>
         </div>
+        <nav class="todo-filters" aria-label="Filter to-dos">
+            {% for value, label in [('all', 'All'), ('open', 'Open'), ('done', 'Done')] %}
+                <a class="button {{ 'button-primary' if active_filter == value else 'button-quiet' }}" href="{{ url_for('todos.index', filter=value) }}"{% if active_filter == value %} aria-current="page"{% endif %}>{{ label }}</a>
+            {% endfor %}
+        </nav>
         {% if not todos %}
-            <div class="empty-state"><h3>Your list is empty</h3><p>Add a to-do above to get started.</p></div>
+            <div class="empty-state">
+                {% if not has_todos %}<h3>Your list is empty</h3><p>Add a to-do above to get started.</p>
+                {% elif active_filter == 'open' %}<h3>No open to-dos</h3><p>All your to-dos are done. Add a new one above or view All.</p>
+                {% else %}<h3>No done to-dos yet</h3><p>Mark a to-do done and it will appear here.</p>{% endif %}
+            </div>
         {% else %}
             <ul class="todo-list">
                 {% for todo in todos %}
@@ -33,10 +42,10 @@
                         {% if delete_id == todo.todo_id %}
                             <div class="delete-confirmation">
                                 <h3>Delete this to-do?</h3><p class="todo-title">{{ todo.title }}</p><p class="field-help">This cannot be undone.</p>
-                                <div class="edit-actions"><form method="post" action="{{ url_for('todos.delete', todo_id=todo.todo_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-danger" type="submit">Delete to-do</button></form><a class="button button-quiet" href="{{ url_for('todos.index') }}">Cancel</a></div>
+                                <div class="edit-actions"><form method="post" action="{{ url_for('todos.delete', todo_id=todo.todo_id, filter=active_filter) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-danger" type="submit">Delete to-do</button></form><a class="button button-quiet" href="{{ url_for('todos.index', filter=active_filter) }}">Cancel</a></div>
                             </div>
                         {% elif edit_id == todo.todo_id %}
-                            <form class="edit-form" method="post" action="{{ url_for('todos.edit', todo_id=todo.todo_id) }}" data-title-form>
+                            <form class="edit-form" method="post" action="{{ url_for('todos.edit', todo_id=todo.todo_id, filter=active_filter) }}" data-title-form>
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <label for="edit-title-{{ todo.todo_id }}">Edit title</label>
                                 <input id="edit-title-{{ todo.todo_id }}" name="title" type="text" value="{{ edit_title }}" aria-describedby="edit-error-{{ todo.todo_id }}" data-title-input autofocus>
@@ -45,10 +54,10 @@
                                     <input id="edit-due-date-{{ todo.todo_id }}" name="due_date" type="date" min="1000-01-01" max="9999-12-31" value="{{ edit_due_date }}">
                                 </div>
                                 <p id="edit-error-{{ todo.todo_id }}" class="inline-error" data-title-error role="alert"></p>
-                                <div class="edit-actions"><button class="button button-primary" type="submit">Save changes</button><a class="button button-quiet" href="{{ url_for('todos.index') }}">Cancel</a></div>
+                                <div class="edit-actions"><button class="button button-primary" type="submit">Save changes</button><a class="button button-quiet" href="{{ url_for('todos.index', filter=active_filter) }}">Cancel</a></div>
                             </form>
                         {% else %}
-                            <form class="status-form" method="post" action="{{ url_for('todos.set_done', todo_id=todo.todo_id) }}">
+                            <form class="status-form" method="post" action="{{ url_for('todos.set_done', todo_id=todo.todo_id, filter=active_filter) }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <input type="hidden" name="status" value="{{ 'open' if todo.is_done else 'done' }}">
                                 <button class="status-button" type="submit" aria-label="{{ 'Mark open' if todo.is_done else 'Mark done' }}" title="{{ 'Mark open' if todo.is_done else 'Mark done' }}">
@@ -57,9 +66,9 @@
                             </form>
                             <div class="todo-content"><span class="todo-title">{{ todo.title }}</span><span class="task-state">{{ 'Done' if todo.is_done else 'Open' }}</span>{% if todo.due_date %}<span class="task-due-date">Due {{ todo.due_date.strftime('%b %d, %Y') }}</span>{% endif %}</div>
                             <div class="todo-actions">
-                                <a class="button button-quiet" href="{{ url_for('todos.index', edit=todo.todo_id) }}" data-edit-link="{{ todo.todo_id }}">Edit</a>
-                                <form class="delete-with-js" method="post" action="{{ url_for('todos.delete', todo_id=todo.todo_id) }}" data-delete-form><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-delete" type="submit">Delete</button></form>
-                                <noscript><a class="button button-delete" href="{{ url_for('todos.index', delete=todo.todo_id) }}">Delete</a></noscript>
+                                <a class="button button-quiet" href="{{ url_for('todos.index', edit=todo.todo_id, filter=active_filter) }}" data-edit-link="{{ todo.todo_id }}">Edit</a>
+                                <form class="delete-with-js" method="post" action="{{ url_for('todos.delete', todo_id=todo.todo_id, filter=active_filter) }}" data-delete-form><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-delete" type="submit">Delete</button></form>
+                                <noscript><a class="button button-delete" href="{{ url_for('todos.index', delete=todo.todo_id, filter=active_filter) }}">Delete</a></noscript>
                             </div>
                         {% endif %}
                     </li>

@@ -7,15 +7,9 @@ from flask import Flask, redirect, render_template, request, session, url_for
 from flask_session import Session
 
 from auth import auth, login_required
-from db import get_database_tls_options
 from todos import todos
 
 load_dotenv()
-
-APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
-if APP_ENV not in {"development", "production"}:
-    raise RuntimeError("APP_ENV must be 'development' or 'production'")
-get_database_tls_options()
 
 app = Flask(__name__)
 app.config.update(
@@ -25,7 +19,6 @@ app.config.update(
     SESSION_PERMANENT=False,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=APP_ENV == "production",
 )
 
 Session(app)

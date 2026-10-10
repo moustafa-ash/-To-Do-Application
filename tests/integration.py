@@ -117,6 +117,84 @@ class Integration(unittest.TestCase):
             )
             return cursor.fetchall()
 
+    def test_filters_privacy_defaults_and_empty_states(self):
+        aid = self.register(self.a, self.a_email)
+        bid = self.register(self.b, self.b_email)
+        for client, uid, prefix in ((self.a, aid, "Mine"), (self.b, bid, "Private")):
+            self.post(client, "/todos", {"title": prefix + " open"})
+            self.post(client, "/todos", {"title": prefix + " done"})
+            self.post(client, f"/todos/{self.rows(uid)[0]['todo_id']}/done", {"status": "done"})
+        for client, own, other in ((self.a, "Mine", "Private"), (self.b, "Private", "Mine")):
+            for query, expected in (("", "all"), ("?filter=invalid", "all"),
+                                    ("?filter=", "all"), ("?filter=done%27%20OR%201=1", "all"),
+                                    ("?filter=all", "all"), ("?filter=open", "open"), ("?filter=done", "done")):
+                page = client.get("/todos" + query).get_data(as_text=True)
+                self.assertIn(f'filter={expected}" aria-current="page"', page)
+                self.assertNotIn(other + " open", page)
+                self.assertNotIn(other + " done", page)
+                for state in ("open", "done"):
+                    self.assertEqual(own + " " + state in page, expected in ("all", state))
+                if expected == "all":
+                    self.assertLess(page.index(own + " done"), page.index(own + " open"))
+        for row in self.rows(aid):
+            self.post(self.a, f"/todos/{row['todo_id']}/done?filter=open", {"status": "done"})
+        self.assertIn(b"No open to-dos", self.a.get("/todos?filter=open").data)
+        for row in self.rows(aid):
+            self.post(self.a, f"/todos/{row['todo_id']}/done?filter=done", {"status": "open"})
+        self.assertIn(b"No done to-dos yet", self.a.get("/todos?filter=done").data)
+        for row in self.rows(aid):
+            self.post(self.a, f"/todos/{row['todo_id']}/delete")
+        for value in ("all", "open", "done"):
+            page = self.a.get("/todos?filter=" + value).data
+            self.assertIn(b"Your list is empty", page)
+            self.assertIn(b"Add a to-do above to get started.", page)
+
+    def test_filters_preserved_through_forms_and_status_changes(self):
+        aid = self.register(self.a, self.a_email)
+        bid = self.register(self.b, self.b_email)
+        self.post(self.b, "/todos", {"title": "Other user's task"})
+        private_id = self.rows(bid)[0]["todo_id"]
+        for value in ("all", "open", "done"):
+            query = "?filter=" + value
+            expected_url = "/todos" + (query if value != "all" else "")
+            response = self.post(self.a, "/todos" + query, {"title": "Filter task"}, follow=False)
+            self.assertEqual(response.location, expected_url)
+            todo_id = self.rows(aid)[0]["todo_id"]
+            if value == "done":
+                self.post(self.a, f"/todos/{todo_id}/done" + query, {"status": "done"})
+            self.post(self.a, "/todos" + query, {"title": "Duplicate fixture"})
+            for action in ("edit", "delete"):
+                page = self.a.get(f"/todos{query}&{action}={todo_id}").get_data(as_text=True)
+                self.assertIn(f'href="/todos{query}">Cancel</a>', page)
+                self.assertIn(f'action="/todos/{todo_id}/{action}{query}"', page)
+                self.assertEqual(self.a.get(f"/todos{query}&{action}={private_id}").status_code, 404)
+            for path in ("/todos", f"/todos/{todo_id}/edit"):
+                for data in ({"title": " "}, {"title": "x" * 201},
+                             {"title": "Filter task", "due_date": "2027-02-29"},
+                             {"title": "Duplicate fixture"}):
+                    response = self.post(self.a, path + query, data)
+                    self.assertEqual(response.status_code, 400)
+                    page = response.get_data(as_text=True)
+                    self.assertIn(f'filter={value}" aria-current="page"', page)
+                    self.assertIn(f'action="{path}{query}"', page)
+            response = self.post(self.a, f"/todos/{todo_id}/edit" + query,
+                                 {"title": "Renamed task", "due_date": "2028-02-29"}, follow=False)
+            self.assertEqual(response.location, expected_url)
+            self.assertEqual(next(row for row in self.rows(aid) if row["todo_id"] == todo_id)["due_date"].isoformat(), "2028-02-29")
+            response = self.post(self.a, f"/todos/{todo_id}/done" + query,
+                                 {"status": "open" if value == "done" else "done"})
+            self.assertEqual(response.request.path + ("?" + response.request.query_string.decode() if response.request.query_string else ""), expected_url)
+            if value != "all":
+                self.assertNotIn(b"Renamed task", response.data)
+            for status in ("invalid", "done", "open"):
+                response = self.post(self.a, f"/todos/{todo_id}/done" + query, {"status": status}, follow=False)
+                self.assertEqual(response.location, expected_url)
+            response = self.post(self.a, f"/todos/{todo_id}/delete" + query, follow=False)
+            self.assertEqual(response.location, expected_url)
+            self.assertFalse(any(row["todo_id"] == todo_id for row in self.rows(aid)))
+            for row in self.rows(aid):
+                self.post(self.a, f"/todos/{row['todo_id']}/delete")
+
     def test_auth_security_and_routing(self):
         self.assertEqual(self.a.get("/todos").status_code, 302)
         response = self.post(self.a, "/register", {})
@@ -267,6 +345,8 @@ class Integration(unittest.TestCase):
 
         self.post(self.a, f"/todos/{first_id}/done", {"status": "done"})
         self.assertIn(b">1</strong> open", self.a.get("/todos").data)
+        self.assertIn(b">1</strong> open", self.a.get("/todos?filter=done").data)
+        self.assertIn(b">1</strong> open", self.a.get("/todos?filter=open").data)
         self.post(self.a, f"/todos/{first_id}/done", {"status": "open"})
         self.assertIn(b">2</strong> open", self.a.get("/todos").data)
 
